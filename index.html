@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#087f5b">
+  <title>Dhwani — Professional Civic Issue Reporting & Tracking Platform</title>
+  <meta name="description" content="Report, monitor, and resolve civic infrastructure issues across Mangaluru with real-time tracking and municipal accountability.">
+  
+  <script>
+    if (localStorage.getItem('Dhwani_theme') === 'dark') {
+      document.documentElement.style.background = '#0a1410';
+      document.documentElement.classList.add('dark');
+    }
+  </script>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Leaflet & Plugins CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
+
+  <!-- App Stylesheet -->
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <!-- Header / Navigation Bar -->
+  <header class="topbar" id="mainTopbar">
+    <div class="container nav">
+      <a class="brand" href="/" data-link aria-label="Dhwani home">
+        <span class="brand-mark">DH</span>
+        <div class="brand-text">
+          <strong>Dhwani</strong>
+          <small>Mangaluru <span class="city-tag">MCC Live</span></small>
+        </div>
+      </a>
+
+      <!-- Desktop Navigation -->
+      <nav id="desktopNav">
+        <a href="/" data-link>Home</a>
+        <a href="/complaints" data-link>Explore Issues</a>
+        <a href="/map" data-link>Live Map</a>
+        <a href="/report" data-link>Report Issue</a>
+        <a href="/track" data-link>Track Complaint</a>
+      </nav>
+
+      <!-- Right Actions -->
+      <div class="nav-actions">
+        <!-- Theme Toggle -->
+        <button id="themeToggleBtn" class="icon-btn" type="button" aria-label="Toggle theme" title="Toggle Dark/Light Mode">
+          <span id="themeToggleIcon">☾</span>
+        </button>
+
+        <!-- Notification Bell -->
+        <div style="position: relative;">
+          <button id="notifBellBtn" class="icon-btn" type="button" aria-label="Notifications" title="Notifications">
+            🔔
+            <span id="notifBadge" class="icon-badge" style="display: none;">0</span>
+          </button>
+          <div id="notifDropdown" class="dropdown-menu" style="width: 320px; right: 0;">
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; border-bottom: 1px solid var(--ink-100);">
+              <strong style="font-size: 13px;">Notifications</strong>
+              <button id="markAllReadBtn" class="btn btn-sm btn-ghost" style="padding: 3px 8px; font-size: 10px;">Mark all read</button>
+            </div>
+            <div id="notifList" style="max-height: 300px; overflow-y: auto;">
+              <div style="padding: 16px; text-align: center; color: var(--ink-400); font-size: 12px;">No notifications yet</div>
+            </div>
+            <div style="border-top: 1px solid var(--ink-100); padding: 6px 12px; text-align: center;">
+              <a href="/notifications" data-link style="font-size: 11px; font-weight: 700; color: var(--brand-600);">View all notifications →</a>
+            </div>
+          </div>
+        </div>
+
+        <!-- Auth Container (User Dropdown or Sign In) -->
+        <div id="authNavContainer" style="position: relative;">
+          <!-- Dynamically populated by app.js -->
+          <a class="btn btn-ghost btn-sm" href="/login" data-link>Sign In</a>
+        </div>
+
+        <!-- Primary CTA -->
+        <a class="nav-cta" href="/report" data-link>
+          <span>Report Issue</span> <span>＋</span>
+        </a>
+
+        <!-- Mobile Hamburger Toggle -->
+        <button id="hamburgerBtn" class="hamburger-btn" type="button" aria-label="Toggle Navigation">
+          ☰
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Mobile Drawer -->
+  <div id="mobileDrawerOverlay" class="mobile-drawer-overlay">
+    <div class="mobile-drawer">
+      <div class="mobile-drawer-header">
+        <div class="brand">
+          <span class="brand-mark">DH</span>
+          <div class="brand-text">
+            <strong>Dhwani</strong>
+            <small>Mangaluru Portal</small>
+          </div>
+        </div>
+        <button id="closeDrawerBtn" class="icon-btn" type="button">✕</button>
+      </div>
+
+      <div class="mobile-nav-links" id="mobileNavLinks">
+        <a href="/" data-link>🏠 Home</a>
+        <a href="/complaints" data-link>📋 Explore Issues</a>
+        <a href="/map" data-link>🗺️ Interactive Map</a>
+        <a href="/report" data-link>📝 Report an Issue</a>
+        <a href="/track" data-link>🔍 Track Complaint</a>
+        <a href="/my-complaints" data-link>📁 My Complaints</a>
+        <a href="/notifications" data-link>🔔 Notifications</a>
+        <a href="/admin" data-link>⚙️ Admin Console</a>
+      </div>
+
+      <div style="margin-top: auto; border-top: 1px solid var(--ink-100); padding-top: 16px;" id="mobileAuthSection">
+        <!-- Injected by app.js -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Main View Container (Client-Side Router Target) -->
+  <main id="app">
+    <!-- Router mounts active page here -->
+  </main>
+
+  <!-- Reusable Admin Manage Complaint Modal -->
+  <div id="adminModal" class="modal-overlay">
+    <div class="modal-window">
+      <div class="modal-header">
+        <div>
+          <span class="section-kicker" id="adminModalKicker">MANAGE COMPLAINT</span>
+          <h3 id="adminModalTitle" style="margin: 4px 0 0; font-family: 'Plus Jakarta Sans', sans-serif;">Update Complaint</h3>
+        </div>
+        <button id="closeAdminModalBtn" class="modal-close-btn" type="button">✕</button>
+      </div>
+
+      <form id="adminManageForm">
+        <input type="hidden" id="modalComplaintId">
+
+        <div style="background: var(--ink-50); border: 1px solid var(--ink-100); border-radius: 12px; padding: 14px; margin-bottom: 20px;">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <strong id="modalComplaintRef" style="font-family: 'Plus Jakarta Sans', sans-serif; color: var(--brand-700);">CP-2026-00000</strong>
+            <span id="modalCurrentStatusBadge" class="status-badge submitted">Submitted</span>
+          </div>
+          <div id="modalComplaintCategory" style="font-size: 13px; font-weight: 700; color: var(--ink-800); margin-top: 4px;">Pothole / Road Damage</div>
+          <div id="modalComplaintArea" style="font-size: 12px; color: var(--ink-500); margin-top: 2px;">📍 Kadri · Near Temple Gate</div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 18px;">
+          <div>
+            <label style="display: block; font-weight: 800; font-size: 12px; margin-bottom: 6px; text-transform: uppercase; color: var(--ink-700);">
+              Update Status <sup>*</sup>
+            </label>
+            <select id="modalStatusSelect" class="form-select" required>
+              <option value="Submitted">Submitted (Under Review)</option>
+              <option value="Verified">Verified</option>
+              <option value="Assigned">Assigned to Department</option>
+              <option value="In Progress">In Progress (Field Work)</option>
+              <option value="Resolved">Resolved (Work Completed)</option>
+              <option value="Rejected">Rejected</option>
+              <option value="Reopened">Reopened</option>
+            </select>
+          </div>
+
+          <div>
+            <label style="display: block; font-weight: 800; font-size: 12px; margin-bottom: 6px; text-transform: uppercase; color: var(--ink-700);">
+              Priority Level
+            </label>
+            <select id="modalPrioritySelect" class="form-select">
+              <option value="Low">Low Priority</option>
+              <option value="Medium">Medium Priority</option>
+              <option value="High">High Priority</option>
+              <option value="Critical">Critical / Emergency</option>
+            </select>
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 18px;">
+          <div>
+            <label style="display: block; font-weight: 800; font-size: 12px; margin-bottom: 6px; text-transform: uppercase; color: var(--ink-700);">
+              Department Assignment
+            </label>
+            <select id="modalDeptSelect" class="form-select">
+              <!-- Dynamically populated -->
+            </select>
+          </div>
+
+          <div>
+            <label style="display: block; font-weight: 800; font-size: 12px; margin-bottom: 6px; text-transform: uppercase; color: var(--ink-700);">
+              Assign Officer
+            </label>
+            <input id="modalOfficerInput" class="form-input" placeholder="e.g. Ravi Kumar (JE - PWD)">
+          </div>
+        </div>
+
+        <div style="margin-bottom: 18px;">
+          <label style="display: block; font-weight: 800; font-size: 12px; margin-bottom: 6px; text-transform: uppercase; color: var(--ink-700);">
+            Official Remarks / Work Progress Note <sup>*</sup>
+          </label>
+          <textarea id="modalRemarksTextarea" class="form-textarea" rows="3" placeholder="Provide details on the inspection, actions taken, or reason for status change..." required></textarea>
+        </div>
+
+        <div id="modalResolutionEvidenceBlock" style="margin-bottom: 18px; display: none;">
+          <label style="display: block; font-weight: 800; font-size: 12px; margin-bottom: 6px; text-transform: uppercase; color: var(--brand-700);">
+            Resolution Proof Photo (Optional)
+          </label>
+          <input id="modalEvidenceFileInput" type="file" accept="image/*" class="form-input">
+          <small style="display: block; color: var(--ink-500); margin-top: 4px; font-size: 11px;">Upload a photo of the completed site work to show citizen proof of resolution.</small>
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; gap: 10px; border-top: 1px solid var(--ink-100); padding-top: 18px;">
+          <button id="cancelAdminModalBtn" class="btn btn-ghost" type="button">Cancel</button>
+          <button id="saveAdminModalBtn" class="btn btn-primary" type="submit">Save & Notify Citizen →</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Reusable Photo Lightbox Modal -->
+  <div id="lightboxModal" class="modal-overlay" style="z-index: 400;">
+    <div style="max-width: 900px; width: 100%; text-align: center; position: relative;">
+      <button id="closeLightboxBtn" style="position: absolute; top: -40px; right: 0; background: rgba(255,255,255,.2); color: #fff; border: 0; width: 36px; height: 36px; border-radius: 50%; font-size: 18px; cursor: pointer;">✕</button>
+      <img id="lightboxImg" src="" alt="Full view" style="max-height: 80vh; margin: auto; border-radius: 12px; box-shadow: 0 20px 60px rgba(0,0,0,.6); object-fit: contain;">
+      <p id="lightboxCaption" style="color: #fff; font-size: 13px; margin-top: 12px;"></p>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div id="toast" class="toast"></div>
+
+  <!-- Global Footer -->
+  <footer>
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-col">
+          <div class="brand" style="margin-bottom: 14px;">
+            <span class="brand-mark">DH</span>
+            <div class="brand-text">
+              <strong style="color: #fff;">Dhwani Mangaluru</strong>
+              <small style="color: #35c695;">Citizen-Government Civic Intelligence</small>
+            </div>
+          </div>
+          <p style="font-size: 13px; line-height: 1.7; color: #8a9a94; max-width: 380px;">
+            A unified municipal issue reporting and tracking platform empowering Mangaluru residents to report infrastructure problems, monitor resolution progress, and ensure accountability.
+          </p>
+          <div style="margin-top: 16px; display: flex; gap: 10px;">
+            <span style="background: rgba(255,255,255,.06); padding: 4px 10px; border-radius: 20px; font-size: 11px; color: #a7edcf;">● MCC Smart Governance</span>
+            <span style="background: rgba(255,255,255,.06); padding: 4px 10px; border-radius: 20px; font-size: 11px; color: #a7edcf;">● 24/7 Citizen Help</span>
+          </div>
+        </div>
+
+        <div class="footer-col">
+          <h4>Platform Navigation</h4>
+          <a href="/" data-link>Home</a>
+          <a href="/report" data-link>Report Civic Issue</a>
+          <a href="/track" data-link>Track Complaint</a>
+          <a href="/complaints" data-link>Explore Issues Board</a>
+          <a href="/map" data-link>Interactive City Map</a>
+          <a href="/my-complaints" data-link>My Submitted Issues</a>
+        </div>
+
+        <div class="footer-col">
+          <h4>Municipal Sections</h4>
+          <a href="/complaints?category=Road+damage+and+potholes" data-link>PWD Road Repairs</a>
+          <a href="/complaints?category=Garbage+and+waste+management" data-link>Health & Sanitation</a>
+          <a href="/complaints?category=Water+leakage" data-link>City Water Board</a>
+          <a href="/complaints?category=Drainage+and+sewage" data-link>Drainage & Sewage</a>
+          <a href="/complaints?category=Streetlight+failure" data-link>MESCOM Electrical</a>
+          <a href="/complaints?category=Traffic+problems" data-link>Traffic Police</a>
+        </div>
+
+        <div class="footer-col">
+          <h4>Emergency Helplines</h4>
+          <p style="font-size: 13px; color: #cdd6d1; margin: 4px 0;"><strong>MCC Control:</strong> 0824-2220300</p>
+          <p style="font-size: 13px; color: #cdd6d1; margin: 4px 0;"><strong>Police Emergency:</strong> 112</p>
+          <p style="font-size: 13px; color: #cdd6d1; margin: 4px 0;"><strong>Electricity (MESCOM):</strong> 1912</p>
+          <p style="font-size: 13px; color: #cdd6d1; margin: 4px 0;"><strong>Ambulance:</strong> 108</p>
+          <div style="margin-top: 14px;">
+            <a href="/admin" data-link style="display: inline-block; background: rgba(255,255,255,.08); color: #fff; padding: 6px 12px; border-radius: 8px; font-weight: 700; font-size: 11px; border: 1px solid rgba(255,255,255,.12);">
+              Officer Portal Login →
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <div class="footer-bottom">
+        <div>© 2026 Dhwani Platform — Dedicated to Mangaluru Municipal Corporation (MCC) Wards.</div>
+        <div style="display: flex; gap: 16px;">
+          <span>Privacy & Data Protection</span>
+          <span>Terms of Public Service</span>
+          <a href="/admin" data-link style="color: #6edcb2;">Municipal Admin</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Leaflet & Heatmap Scripts -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+  <script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
+
+  <!-- Application Logic -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <script src="/app.js"></script>
+</body>
+</html>
