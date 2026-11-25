@@ -1,9 +1,18 @@
-const fs = require('fs');
-const path = require('path');
+// ============================================================
+// Supabase (PostgreSQL) data layer.
+// Same function names as the old JSON-file db.js, but every data function is now ASYNC
+// (returns a Promise), so callers must `await` them.
+//
+// Storage layout:
+//   users, sessions, notifications, counters  -> normal tables
+//   complaints -> a few real columns (for the Supabase dashboard / indexes)
+//                 + a `doc` JSON column holding the full complaint object,
+//                 so the shape the frontend sees is exactly what it was before.
+// ============================================================
 const crypto = require('crypto');
+const sb = require('./supabase');
 
-const DATA_FILE = path.join(__dirname, 'data.json');
-
+// ---------------- Passwords (unchanged, so existing hashes keep working) ----------------
 function hashPassword(password) {
   const salt = crypto.randomBytes(16).toString('hex');
   const hash = crypto.pbkdf2Sync(password, salt, 1000, 64, 'sha512').toString('hex');
@@ -17,7 +26,7 @@ function verifyPassword(password, stored) {
   return hash === verifyHash;
 }
 
-// Pre-defined departments and officers
+// ---------------- Static data ----------------
 const DEPARTMENTS = [
   {
     name: 'PWD (Roads & Infrastructure)',
@@ -77,568 +86,185 @@ const DEPARTMENTS = [
   }
 ];
 
-function read() {
-  try {
-    return JSON.parse(fs.readFileSync(DATA_FILE, 'utf8'));
-  } catch (e) {
-    return null;
+// ---------------- Helpers ----------------
+// Throws a readable error when a Supabase call fails
+function must(res, what) {
+  if (res.error) {
+    const e = new Error(`[db] ${what || 'query'} failed: ${res.error.message}`);
+    e.cause = res.error;
+    throw e;
   }
+  return res.data;
 }
 
-function write(data) {
-  try {
-    fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2), 'utf8');
-  } catch (e) {
-    console.error('Error writing database:', e);
-  }
-}
+const normEmail = (e) => String(e || '').toLowerCase().trim();
+const normId = (id) => String(id || '').trim().toUpperCase();
 
-let data = read();
-if (!data) data = {};
-
-// Ensure structure
-if (!Array.isArray(data.complaints)) data.complaints = [];
-if (!Array.isArray(data.users)) data.users = [];
-if (!Array.isArray(data.notifications)) data.notifications = [];
-if (!Array.isArray(data.sessions)) data.sessions = [];
-if (!data.meta || typeof data.meta !== 'object') data.meta = {};
-if (!data.meta.idCounters || typeof data.meta.idCounters !== 'object') data.meta.idCounters = {};
-
-// Seed default users if empty
-if (data.users.length === 0) {
-  data.users.push(
-    {
-      id: 'usr_admin_01',
-      name: 'Commissioner M. Hegde',
-      email: 'admin@Dhwani.org',
-      phone: '+91 824 2220300',
-      passwordHash: hashPassword('admin123'),
-      role: 'admin',
-      department: 'Municipal Administration',
-      title: 'Municipal Commissioner',
-      createdAt: '2026-01-01T00:00:00.000Z'
-    },
-    {
-      id: 'usr_officer_pwd',
-      name: 'Ravi Kumar (JE)',
-      email: 'officer.pwd@Dhwani.org',
-      phone: '+91 98450 11223',
-      passwordHash: hashPassword('pwd123'),
-      role: 'admin',
-      department: 'PWD (Roads & Infrastructure)',
-      title: 'Junior Engineer — Kadri Section',
-      createdAt: '2026-01-05T00:00:00.000Z'
-    },
-    {
-      id: 'usr_citizen_ananya',
-      name: 'Ananya Rao',
-      email: 'citizen@example.com',
-      phone: '9876543210',
-      passwordHash: hashPassword('citizen123'),
-      role: 'citizen',
-      department: null,
-      title: 'Resident, Kadri',
-      createdAt: '2026-02-10T00:00:00.000Z'
-    }
-  );
-}
-
-// Seed sample complaints if low or normalize existing
-const AREA_COORDS = {
-  'Hampankatta':     [12.8698, 74.8426],
-  'Kadri':           [12.8950, 74.8550],
-  'Kottara':         [12.9160, 74.8320],
-  'Bejai':           [12.8870, 74.8430],
-  'Balmatta':        [12.8750, 74.8480],
-  'Surathkal':       [13.0068, 74.7944],
-  'Kankanady':       [12.8760, 74.8620],
-  'Ullal':           [12.8050, 74.8500],
-  'Panambur':        [12.9450, 74.8020],
-  'Other Mangaluru': [12.9141, 74.8560]
-};
-
-// Normalize existing complaints to support new fields
-data.complaints.forEach((c, idx) => {
-  if (!c.title) {
-    c.title = c.category ? `${c.category} reported at ${c.area || 'Mangaluru'}` : 'Civic Issue';
-  }
-  if (!c.priority) {
-    c.priority = (idx % 3 === 0) ? 'High' : (idx % 2 === 0 ? 'Medium' : 'Low');
-  }
-  if (!Array.isArray(c.photos)) {
-    c.photos = c.photo ? [c.photo] : [];
-  }
-  if (!Array.isArray(c.videos)) {
-    c.videos = [];
-  }
-  if (!c.coords && c.area && AREA_COORDS[c.area]) {
-    c.coords = AREA_COORDS[c.area];
-    c.lat = c.coords[0];
-    c.lng = c.coords[1];
-  }
-  if (!c.slaHours) {
-    c.slaHours = '7 days';
-  }
-  if (!Array.isArray(c.statusHistory) || c.statusHistory.length === 0) {
-    c.statusHistory = [
-      {
-        id: `sh_${Date.now()}_init_${idx}`,
-        status: 'Submitted',
-        changedBy: c.name || 'Citizen',
-        role: 'Citizen',
-        timestamp: c.createdAt || new Date().toISOString(),
-        remarks: 'Complaint filed through Dhwani online portal.',
-        evidencePhoto: null
-      }
-    ];
-    if (c.status === 'In Progress' || c.status === 'Received') {
-      c.statusHistory.push({
-        id: `sh_${Date.now()}_prog_${idx}`,
-        status: c.status,
-        changedBy: c.officer || 'Municipal Desk',
-        role: 'Municipal Authority',
-        timestamp: c.updatedAt || new Date().toISOString(),
-        remarks: c.notes && c.notes[0] ? c.notes[0].text : 'Inspected and assigned for resolution.',
-        evidencePhoto: null
-      });
-    } else if (c.status === 'Resolved') {
-      c.statusHistory.push({
-        id: `sh_${Date.now()}_res_${idx}`,
-        status: 'Resolved',
-        changedBy: c.officer || 'Supervising Engineer',
-        role: 'Municipal Authority',
-        timestamp: c.updatedAt || new Date().toISOString(),
-        remarks: 'Issue verified and resolved on-site.',
-        evidencePhoto: null
-      });
-    }
-  }
-  // Legacy demo data only: complaints that have NO reporterId field at all get the demo citizen.
-  // (Guest and anonymous complaints store reporterId = null on purpose and must stay that way.)
-  if (c.reporterId === undefined) {
-    c.reporterId = 'usr_citizen_ananya';
-  }
-
-  // Community voting + anonymous reporting fields
-  if (!Array.isArray(c.voters)) c.voters = [];
-  if (typeof c.anonymous !== 'boolean') c.anonymous = false;
+const userOut = (r) => r && ({
+  id: r.id,
+  name: r.name,
+  email: r.email,
+  phone: r.phone,
+  passwordHash: r.password_hash,
+  role: r.role,
+  department: r.department,
+  title: r.title,
+  createdAt: r.created_at
 });
 
-// If fewer than 5 sample complaints, add realistic rich complaints for demonstration
-if (data.complaints.length < 5) {
-  const now = Date.now();
-  const sampleComplaints = [
-    {
-      id: 'CP-2026-00001',
-      title: 'Deep crater pothole on Kadri Temple Road',
-      description: 'Multiple deep potholes right outside the primary school gate. Water accumulates during rains making it dangerous for two-wheelers and children.',
-      category: 'Road damage and potholes',
-      area: 'Kadri',
-      landmark: 'Near Kadri Manjunatha Temple South Gate',
-      lat: 12.8948,
-      lng: 74.8552,
-      coords: [12.8948, 74.8552],
-      status: 'In Progress',
-      priority: 'High',
-      department: 'PWD (Roads & Infrastructure)',
-      officer: 'Ravi Kumar (JE - PWD Kadri)',
-      slaHours: '7 days',
-      expectedResolutionDate: new Date(now + 2 * 86400000).toISOString(),
-      photos: [],
-      videos: [],
-      resolutionPhoto: null,
-      resolutionRemarks: null,
-      rejectionReason: null,
-      reporterId: 'usr_citizen_ananya',
-      reporterName: 'Ananya Rao',
-      reporterPhone: '9876543210',
-      reporterEmail: 'citizen@example.com',
-      isPublic: true,
-      createdAt: new Date(now - 4 * 86400000).toISOString(),
-      updatedAt: new Date(now - 1 * 86400000).toISOString(),
-      resolvedAt: null,
-      statusHistory: [
-        {
-          id: 'sh_cp1_1',
-          status: 'Submitted',
-          changedBy: 'Ananya Rao',
-          role: 'Citizen',
-          timestamp: new Date(now - 4 * 86400000).toISOString(),
-          remarks: 'Citizen reported hazardous pothole on busy pedestrian stretch.',
-          evidencePhoto: null
-        },
-        {
-          id: 'sh_cp1_2',
-          status: 'Verified',
-          changedBy: 'Control Room Officer',
-          role: 'Municipal Authority',
-          timestamp: new Date(now - 3 * 86400000).toISOString(),
-          remarks: 'Location confirmed; marked as high priority due to school proximity.',
-          evidencePhoto: null
-        },
-        {
-          id: 'sh_cp1_3',
-          status: 'Assigned',
-          changedBy: 'Ward Engineer',
-          role: 'Municipal Authority',
-          timestamp: new Date(now - 2 * 86400000).toISOString(),
-          remarks: 'Assigned to Ravi Kumar (JE - PWD) for asphalt patching.',
-          evidencePhoto: null
-        },
-        {
-          id: 'sh_cp1_4',
-          status: 'In Progress',
-          changedBy: 'Ravi Kumar (JE - PWD Kadri)',
-          role: 'Municipal Authority',
-          timestamp: new Date(now - 1 * 86400000).toISOString(),
-          remarks: 'Road crew scheduled; bitumen mix dispatched from mixing plant.',
-          evidencePhoto: null
-        }
-      ],
-      notes: [
-        { text: 'Site inspection completed by junior engineer.', author: 'Ravi Kumar', role: 'PWD', at: new Date(now - 2 * 86400000).toISOString() },
-        { text: 'Patching work started today morning.', author: 'Ravi Kumar', role: 'PWD', at: new Date(now - 1 * 86400000).toISOString() }
-      ]
-    },
-    {
-      id: 'CP-2026-00002',
-      title: 'Overflowing garbage bin behind Hampankatta Market',
-      description: 'Solid waste container has not been cleared for 3 days. Stray cattle and dogs are scattering waste across the road causing severe odor.',
-      category: 'Garbage and waste management',
-      area: 'Hampankatta',
-      landmark: 'Behind Central Fish & Vegetable Market',
-      lat: 12.8698,
-      lng: 74.8426,
-      coords: [12.8698, 74.8426],
-      status: 'Resolved',
-      priority: 'Critical',
-      department: 'Health & Sanitation Section',
-      officer: 'Suresh Nayak (Sanitary Inspector)',
-      slaHours: '24 hours',
-      expectedResolutionDate: new Date(now - 5 * 86400000).toISOString(),
-      photos: [],
-      videos: [],
-      resolutionPhoto: null,
-      resolutionRemarks: 'Garbage compactor vehicle completed waste evacuation and spot sanitized with bleaching powder.',
-      rejectionReason: null,
-      reporterId: 'usr_citizen_ananya',
-      reporterName: 'Ananya Rao',
-      reporterPhone: '9876543210',
-      reporterEmail: 'citizen@example.com',
-      isPublic: true,
-      createdAt: new Date(now - 6 * 86400000).toISOString(),
-      updatedAt: new Date(now - 5 * 86400000).toISOString(),
-      resolvedAt: new Date(now - 5 * 86400000).toISOString(),
-      statusHistory: [
-        {
-          id: 'sh_cp2_1',
-          status: 'Submitted',
-          changedBy: 'Ananya Rao',
-          role: 'Citizen',
-          timestamp: new Date(now - 6 * 86400000).toISOString(),
-          remarks: 'Reported overflowing garbage creating health hazard.',
-          evidencePhoto: null
-        },
-        {
-          id: 'sh_cp2_2',
-          status: 'Verified',
-          changedBy: 'Health Section Desk',
-          role: 'Municipal Authority',
-          timestamp: new Date(now - 5.8 * 86400000).toISOString(),
-          remarks: 'Escalated as critical health priority.',
-          evidencePhoto: null
-        },
-        {
-          id: 'sh_cp2_3',
-          status: 'In Progress',
-          changedBy: 'Suresh Nayak',
-          role: 'Municipal Authority',
-          timestamp: new Date(now - 5.5 * 86400000).toISOString(),
-          remarks: 'Garbage truck team deployed on-site.',
-          evidencePhoto: null
-        },
-        {
-          id: 'sh_cp2_4',
-          status: 'Resolved',
-          changedBy: 'Suresh Nayak',
-          role: 'Municipal Authority',
-          timestamp: new Date(now - 5 * 86400000).toISOString(),
-          remarks: 'Container emptied, area swept and disinfected with lime powder.',
-          evidencePhoto: null
-        }
-      ],
-      notes: [
-        { text: 'Compactor vehicle #KA-19-G-4412 cleared the spot.', author: 'Suresh Nayak', role: 'Health Section', at: new Date(now - 5 * 86400000).toISOString() }
-      ]
-    },
-    {
-      id: 'CP-2026-00003',
-      title: 'Main pipeline drinking water leakage flooding street',
-      description: 'Clean drinking water gushing from underground pipeline joint since 6 AM. Gallons of water wasted and low pressure in nearby homes.',
-      category: 'Water leakage',
-      area: 'Bejai',
-      landmark: 'Near Bejai Church junction',
-      lat: 12.8872,
-      lng: 74.8435,
-      coords: [12.8872, 74.8435],
-      status: 'Assigned',
-      priority: 'Critical',
-      department: 'Mangaluru City Water Supply Board',
-      officer: 'Rajesh Bhat (Assistant Executive Engineer)',
-      slaHours: '48 hours',
-      expectedResolutionDate: new Date(now + 1 * 86400000).toISOString(),
-      photos: [],
-      videos: [],
-      resolutionPhoto: null,
-      resolutionRemarks: null,
-      rejectionReason: null,
-      reporterId: 'usr_citizen_ananya',
-      reporterName: 'Ananya Rao',
-      reporterPhone: '9876543210',
-      reporterEmail: 'citizen@example.com',
-      isPublic: true,
-      createdAt: new Date(now - 1 * 86400000).toISOString(),
-      updatedAt: new Date(now - 18 * 3600000).toISOString(),
-      resolvedAt: null,
-      statusHistory: [
-        {
-          id: 'sh_cp3_1',
-          status: 'Submitted',
-          changedBy: 'Ananya Rao',
-          role: 'Citizen',
-          timestamp: new Date(now - 1 * 86400000).toISOString(),
-          remarks: 'Severe pipeline burst reported.',
-          evidencePhoto: null
-        },
-        {
-          id: 'sh_cp3_2',
-          status: 'Verified',
-          changedBy: 'Emergency Helpline',
-          role: 'Municipal Authority',
-          timestamp: new Date(now - 22 * 3600000).toISOString(),
-          remarks: 'Main valve temporarily regulated to prevent further flooding.',
-          evidencePhoto: null
-        },
-        {
-          id: 'sh_cp3_3',
-          status: 'Assigned',
-          changedBy: 'Water Board Superintending Eng',
-          role: 'Municipal Authority',
-          timestamp: new Date(now - 18 * 3600000).toISOString(),
-          remarks: 'Assigned to Rajesh Bhat. Valve technician team dispatched with clamp repair kit.',
-          evidencePhoto: null
-        }
-      ],
-      notes: []
-    },
-    {
-      id: 'CP-2026-00004',
-      title: 'Blocked stormwater storm drain causing waterlogging',
-      description: 'Silt and plastic waste blocking main drain grating. Water backflows onto pedestrian walkway during heavy downpours.',
-      category: 'Drainage and sewage',
-      area: 'Kottara',
-      landmark: 'Kottara Chowki service road',
-      lat: 12.9160,
-      lng: 74.8320,
-      coords: [12.9160, 74.8320],
-      status: 'Submitted',
-      priority: 'Medium',
-      department: 'Engineering Section (Drainage & Sewage)',
-      officer: null,
-      slaHours: '72 hours',
-      expectedResolutionDate: new Date(now + 3 * 86400000).toISOString(),
-      photos: [],
-      videos: [],
-      resolutionPhoto: null,
-      resolutionRemarks: null,
-      rejectionReason: null,
-      reporterId: 'usr_citizen_ananya',
-      reporterName: 'Ananya Rao',
-      reporterPhone: '9876543210',
-      reporterEmail: 'citizen@example.com',
-      isPublic: true,
-      createdAt: new Date(now - 12 * 3600000).toISOString(),
-      updatedAt: new Date(now - 12 * 3600000).toISOString(),
-      resolvedAt: null,
-      statusHistory: [
-        {
-          id: 'sh_cp4_1',
-          status: 'Submitted',
-          changedBy: 'Ananya Rao',
-          role: 'Citizen',
-          timestamp: new Date(now - 12 * 3600000).toISOString(),
-          remarks: 'Initial complaint submitted awaiting verification.',
-          evidencePhoto: null
-        }
-      ],
-      notes: []
-    },
-    {
-      id: 'CP-2026-00005',
-      title: 'Four streetlights not functioning for over a week',
-      description: 'Entire stretch of road near beach park is in complete darkness at night. Unsafe for women and evening commuters.',
-      category: 'Streetlight failure',
-      area: 'Panambur',
-      landmark: 'Panambur Beach entrance approach road',
-      lat: 12.9450,
-      lng: 74.8020,
-      coords: [12.9450, 74.8020],
-      status: 'In Progress',
-      priority: 'Medium',
-      department: 'MESCOM (Electrical Division)',
-      officer: 'Ganesh Poojary (Section Officer Kadri)',
-      slaHours: '48 hours',
-      expectedResolutionDate: new Date(now + 1 * 86400000).toISOString(),
-      photos: [],
-      videos: [],
-      resolutionPhoto: null,
-      resolutionRemarks: null,
-      rejectionReason: null,
-      reporterId: 'usr_citizen_ananya',
-      reporterName: 'Ananya Rao',
-      reporterPhone: '9876543210',
-      reporterEmail: 'citizen@example.com',
-      isPublic: true,
-      createdAt: new Date(now - 2 * 86400000).toISOString(),
-      updatedAt: new Date(now - 14 * 3600000).toISOString(),
-      resolvedAt: null,
-      statusHistory: [
-        {
-          id: 'sh_cp5_1',
-          status: 'Submitted',
-          changedBy: 'Ananya Rao',
-          role: 'Citizen',
-          timestamp: new Date(now - 2 * 86400000).toISOString(),
-          remarks: 'Reported continuous dark streetlights.',
-          evidencePhoto: null
-        },
-        {
-          id: 'sh_cp5_2',
-          status: 'Verified',
-          changedBy: 'Electrical Control Room',
-          role: 'Municipal Authority',
-          timestamp: new Date(now - 30 * 3600000).toISOString(),
-          remarks: 'Feeder pillar circuit fault diagnosed.',
-          evidencePhoto: null
-        },
-        {
-          id: 'sh_cp5_3',
-          status: 'In Progress',
-          changedBy: 'Ganesh Poojary',
-          role: 'Municipal Authority',
-          timestamp: new Date(now - 14 * 3600000).toISOString(),
-          remarks: 'Hydraulic ladder truck deployed to replace LED ballast.',
-          evidencePhoto: null
-        }
-      ],
-      notes: [
-        { text: 'Replacement LED luminaires being fitted today.', author: 'Ganesh Poojary', role: 'MESCOM', at: new Date(now - 14 * 3600000).toISOString() }
-      ]
-    }
-  ];
+const notifOut = (r) => r && ({
+  id: r.id,
+  userId: r.user_id,
+  complaintId: r.complaint_id,
+  title: r.title,
+  message: r.message,
+  type: r.type,
+  read: r.read,
+  createdAt: r.created_at
+});
 
-  sampleComplaints.forEach(sc => {
-    if (!data.complaints.some(c => c.id === sc.id)) {
-      sc.voters = [];
-      sc.anonymous = false;
-      data.complaints.push(sc);
-    }
-  });
+// The real columns that mirror the complaint (the full object lives in `doc`)
+const complaintRow = (c) => ({
+  id: c.id,
+  status: c.status || 'Submitted',
+  category: c.category || null,
+  priority: c.priority || null,
+  area: c.area || null,
+  department: c.department || null,
+  reporter_id: c.reporterId || null,
+  created_at: c.createdAt || new Date().toISOString(),
+  updated_at: c.updatedAt || c.createdAt || new Date().toISOString(),
+  doc: c
+});
+
+// Reads every complaint (Supabase returns at most 1000 rows per request, so page through)
+async function allComplaints() {
+  const out = [];
+  const PAGE = 1000;
+  for (let from = 0; ; from += PAGE) {
+    const res = await sb.from('complaints').select('doc').order('created_at', { ascending: false }).range(from, from + PAGE - 1);
+    const rows = must(res, 'read complaints');
+    out.push(...rows.map(r => r.doc));
+    if (rows.length < PAGE) break;
+  }
+  return out;
 }
 
-// Complaint ID counters: IDs only ever go up, so a deleted report's ID (and any
-// QR code / link pointing at it) is never handed to a different report.
-function syncIdCounters() {
-  data.complaints.forEach(c => {
-    const m = /^CP-(\d{4})-(\d+)$/.exec(c.id || '');
-    if (!m) return;
-    const year = m[1];
-    const num = parseInt(m[2], 10);
-    if ((data.meta.idCounters[year] || 0) < num) data.meta.idCounters[year] = num;
-  });
+async function saveComplaint(c) {
+  must(await sb.from('complaints').upsert(complaintRow(c), { onConflict: 'id' }), 'save complaint');
+  return c;
 }
-syncIdCounters();
 
-write(data);
+// ---------------- Start-up ----------------
+// Creates the demo accounts if the users table is empty. Call (and await) once before the server starts.
+async function init() {
+  const { count, error } = await sb.from('users').select('id', { count: 'exact', head: true });
+  if (error) {
+    throw new Error(`Could not reach the Supabase "users" table: ${error.message}. ` +
+      'Did you run schema.sql in the Supabase SQL editor, and are SUPABASE_URL / SUPABASE_SECRET_KEY correct in .env?');
+  }
+  if (count === 0) {
+    must(await sb.from('users').insert([
+      {
+        id: 'usr_admin_01', name: 'Commissioner M. Hegde', email: 'admin@dhwani.org', phone: '+91 824 2220300',
+        password_hash: hashPassword('admin123'), role: 'admin', department: 'Municipal Administration',
+        title: 'Municipal Commissioner', created_at: '2026-01-01T00:00:00.000Z'
+      },
+      {
+        id: 'usr_officer_pwd', name: 'Ravi Kumar (JE)', email: 'officer.pwd@dhwani.org', phone: '+91 98450 11223',
+        password_hash: hashPassword('pwd123'), role: 'admin', department: 'PWD (Roads & Infrastructure)',
+        title: 'Junior Engineer — Kadri Section', created_at: '2026-01-05T00:00:00.000Z'
+      },
+      {
+        id: 'usr_citizen_ananya', name: 'Ananya Rao', email: 'citizen@example.com', phone: '9876543210',
+        password_hash: hashPassword('citizen123'), role: 'citizen', department: null,
+        title: 'Resident, Kadri', created_at: '2026-02-10T00:00:00.000Z'
+      }
+    ]), 'seed demo users');
+    console.log('[db] created demo accounts (admin@dhwani.org / citizen@example.com)');
+  }
+  console.log('[db] connected to Supabase');
+}
 
 module.exports = {
-  // Department info
+  init,
+
+  // Department info (static, not async)
   getDepartments: () => DEPARTMENTS,
 
-  // Auth & Users
-  getUsers: () => data.users,
-  getUserById: (id) => data.users.find(u => u.id === id),
-  getUserByEmail: (email) => data.users.find(u => u.email.toLowerCase() === (email || '').toLowerCase().trim()),
-  addUser: (userData) => {
+  // ---------------- Auth & Users ----------------
+  getUsers: async () => must(await sb.from('users').select('*'), 'read users').map(userOut),
+
+  getUserById: async (id) => {
+    if (!id) return null;
+    return userOut(must(await sb.from('users').select('*').eq('id', id).maybeSingle(), 'read user'));
+  },
+
+  getUserByEmail: async (email) => {
+    const e = normEmail(email);
+    if (!e) return null;
+    return userOut(must(await sb.from('users').select('*').eq('email', e).maybeSingle(), 'read user by email'));
+  },
+
+  addUser: async (userData) => {
     const id = `usr_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
-    const user = {
+    const row = {
       id,
       name: userData.name || 'Citizen',
-      email: userData.email.toLowerCase().trim(),
+      email: normEmail(userData.email),
       phone: userData.phone || '',
-      passwordHash: hashPassword(userData.password || 'password123'),
+      password_hash: hashPassword(userData.password || 'password123'),
       role: userData.role || 'citizen',
       department: userData.department || null,
       title: userData.title || (userData.role === 'admin' ? 'Municipal Staff' : 'Resident'),
-      createdAt: new Date().toISOString()
+      created_at: new Date().toISOString()
     };
-    data.users.push(user);
-    write(data);
-    return user;
-  },
-  updateUser: (id, patch) => {
-    const u = data.users.find(x => x.id === id);
-    if (!u) return null;
-    if (patch.password) {
-      u.passwordHash = hashPassword(patch.password);
-      delete patch.password;
-    }
-    Object.assign(u, patch);
-    write(data);
-    return u;
-  },
-  authenticateUser: (email, password) => {
-    const u = data.users.find(x => x.email.toLowerCase() === (email || '').toLowerCase().trim());
-    if (!u) return null;
-    if (verifyPassword(password, u.passwordHash)) {
-      return u;
-    }
-    return null;
+    return userOut(must(await sb.from('users').insert(row).select().single(), 'add user'));
   },
 
-  // Sessions
-  createSession: (userId) => {
+  updateUser: async (id, patch) => {
+    const row = {};
+    if (patch.name !== undefined) row.name = patch.name;
+    if (patch.phone !== undefined) row.phone = patch.phone;
+    if (patch.department !== undefined) row.department = patch.department;
+    if (patch.title !== undefined) row.title = patch.title;
+    if (patch.role !== undefined) row.role = patch.role;
+    if (patch.password) row.password_hash = hashPassword(patch.password);
+    if (Object.keys(row).length === 0) return userOut(must(await sb.from('users').select('*').eq('id', id).maybeSingle(), 'read user'));
+    return userOut(must(await sb.from('users').update(row).eq('id', id).select().maybeSingle(), 'update user'));
+  },
+
+  authenticateUser: async (email, password) => {
+    const u = await module.exports.getUserByEmail(email);
+    if (!u) return null;
+    return verifyPassword(password, u.passwordHash) ? u : null;
+  },
+
+  // ---------------- Sessions ----------------
+  createSession: async (userId) => {
     const token = `cpsess_${crypto.randomBytes(24).toString('hex')}`;
-    const sess = {
-      token,
-      userId,
-      createdAt: Date.now()
-    };
-    data.sessions.push(sess);
-    // Keep max 200 sessions
-    if (data.sessions.length > 200) data.sessions.shift();
-    write(data);
+    must(await sb.from('sessions').insert({ token, user_id: userId, created_at: Date.now() }), 'create session');
+    // Tidy up sessions older than 30 days (best effort, never blocks login)
+    sb.from('sessions').delete().lt('created_at', Date.now() - 30 * 86400000).then(() => {}, () => {});
     return token;
   },
-  getSessionUser: (token) => {
+
+  getSessionUser: async (token) => {
     if (!token) return null;
-    const sess = data.sessions.find(s => s.token === token);
+    const sess = must(await sb.from('sessions').select('*').eq('token', token).maybeSingle(), 'read session');
     if (!sess) return null;
-    // Session valid for 30 days
-    if (Date.now() - sess.createdAt > 30 * 86400000) return null;
-    return data.users.find(u => u.id === sess.userId) || null;
-  },
-  deleteSession: (token) => {
-    const idx = data.sessions.findIndex(s => s.token === token);
-    if (idx !== -1) {
-      data.sessions.splice(idx, 1);
-      write(data);
-    }
+    if (Date.now() - Number(sess.created_at) > 30 * 86400000) return null; // valid for 30 days
+    return module.exports.getUserById(sess.user_id);
   },
 
-  // Complaints
-  getComplaints: (query = {}) => {
-    let list = [...data.complaints];
+  deleteSession: async (token) => {
+    if (!token) return;
+    must(await sb.from('sessions').delete().eq('token', token), 'delete session');
+  },
+
+  // ---------------- Complaints ----------------
+  getComplaints: async (query = {}) => {
+    let list = await allComplaints();
 
     if (query.status && query.status !== 'all') {
       const statuses = query.status.split(',').map(s => s.trim().toLowerCase());
@@ -659,6 +285,12 @@ module.exports = {
     if (query.reporterId) {
       list = list.filter(c => c.reporterId === query.reporterId);
     }
+    if (query.flagged === 'true') {
+      list = list.filter(c => (c.flags || []).length > 0 || c.reviewStatus === 'held');
+    }
+    if (query.overdue === 'true') {
+      list = list.filter(c => c.overdue && c.status !== 'Resolved' && c.status !== 'Rejected');
+    }
     if (query.search) {
       const q = query.search.toLowerCase().trim();
       list = list.filter(c =>
@@ -671,7 +303,6 @@ module.exports = {
       );
     }
 
-    // Sort order
     if (query.sort === 'oldest') {
       list.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
     } else if (query.sort === 'priority') {
@@ -683,71 +314,65 @@ module.exports = {
         (new Date(b.createdAt) - new Date(a.createdAt))
       );
     } else {
-      // Default: newest first
       list.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
     }
-
     return list;
   },
 
-  getComplaint: (id) => {
+  getComplaint: async (id) => {
     if (!id) return null;
-    const cleanId = id.trim().toUpperCase();
-    return data.complaints.find(c => c.id.toUpperCase() === cleanId) || null;
+    const res = await sb.from('complaints').select('doc').eq('id', normId(id)).maybeSingle();
+    const row = must(res, 'read complaint');
+    return row ? row.doc : null;
   },
 
-  getNextComplaintId: () => {
+  // IDs only ever go up (a counter lives in the database), so a deleted report's ID is never reused
+  getNextComplaintId: async () => {
     const year = String(new Date().getFullYear());
-    const prefix = `CP-${year}-`;
-    let nextNum = (data.meta.idCounters[year] || 0) + 1;
-    let candidate = `${prefix}${String(nextNum).padStart(5, '0')}`;
-    while (data.complaints.some(c => c.id === candidate)) {
-      nextNum++;
-      candidate = `${prefix}${String(nextNum).padStart(5, '0')}`;
+    for (let i = 0; i < 20; i++) {
+      const n = must(await sb.rpc('next_complaint_number', { p_year: year }), 'next complaint number');
+      const id = `CP-${year}-${String(n).padStart(5, '0')}`;
+      const exists = must(await sb.from('complaints').select('id').eq('id', id).maybeSingle(), 'check id');
+      if (!exists) return id;
     }
-    data.meta.idCounters[year] = nextNum; // persisted on the next write (addComplaint)
-    return candidate;
+    throw new Error('[db] could not allocate a complaint id');
   },
 
-  addComplaint: (c) => {
-    data.complaints.unshift(c);
-    write(data);
+  addComplaint: async (c) => {
+    must(await sb.from('complaints').insert(complaintRow(c)), 'add complaint');
     return c;
   },
 
-  updateComplaint: (id, patch) => {
-    const c = data.complaints.find(x => x.id.toUpperCase() === id.trim().toUpperCase());
+  updateComplaint: async (id, patch) => {
+    const c = await module.exports.getComplaint(id);
     if (!c) return null;
-    Object.assign(c, patch);
-    write(data);
-    return c;
+    return saveComplaint({ ...c, ...patch });
   },
 
-  // Permanently delete a complaint and the notifications that point at it.
+  // Permanently deletes a complaint and the notifications that point at it.
   // Returns the removed complaint (so the caller can delete its uploaded files) or null.
-  removeComplaint: (id) => {
-    const idx = data.complaints.findIndex(x => x.id.toUpperCase() === (id || '').trim().toUpperCase());
-    if (idx === -1) return null;
-    const [removed] = data.complaints.splice(idx, 1);
-    data.notifications = data.notifications.filter(n => n.complaintId !== removed.id);
-    write(data);
-    return removed;
-  },
-
-  // Community voting: toggles `voterKey` on the complaint. Returns { votes, voted } or null.
-  toggleVote: (id, voterKey) => {
-    const c = data.complaints.find(x => x.id.toUpperCase() === (id || '').trim().toUpperCase());
+  removeComplaint: async (id) => {
+    const c = await module.exports.getComplaint(id);
     if (!c) return null;
-    if (!Array.isArray(c.voters)) c.voters = [];
-    const idx = c.voters.indexOf(voterKey);
-    if (idx === -1) c.voters.push(voterKey);
-    else c.voters.splice(idx, 1);
-    write(data);
-    return { votes: c.voters.length, voted: idx === -1 };
+    must(await sb.from('notifications').delete().eq('complaint_id', c.id), 'delete notifications');
+    must(await sb.from('complaints').delete().eq('id', c.id), 'delete complaint');
+    return c;
   },
 
-  addStatusChange: (id, status, changedBy, role, remarks, evidencePhoto, extra = {}) => {
-    const c = data.complaints.find(x => x.id.toUpperCase() === id.trim().toUpperCase());
+  // Toggles `voterKey` on the complaint. Returns { votes, voted } or null.
+  toggleVote: async (id, voterKey) => {
+    const c = await module.exports.getComplaint(id);
+    if (!c) return null;
+    const voters = Array.isArray(c.voters) ? [...c.voters] : [];
+    const idx = voters.indexOf(voterKey);
+    if (idx === -1) voters.push(voterKey);
+    else voters.splice(idx, 1);
+    await saveComplaint({ ...c, voters });
+    return { votes: voters.length, voted: idx === -1 };
+  },
+
+  addStatusChange: async (id, status, changedBy, role, remarks, evidencePhoto, extra = {}) => {
+    const c = await module.exports.getComplaint(id);
     if (!c) return null;
 
     c.status = status;
@@ -760,6 +385,10 @@ module.exports = {
       if (remarks) c.rejectionReason = remarks;
     } else if (status === 'Reopened') {
       c.resolvedAt = null;
+      // Reopened work gets a fresh clock-state so the SLA sweep can warn/escalate again
+      c.overdue = false;
+      c.slaWarned = false;
+      c.escalatedAt = null;
     }
 
     if (extra.department) c.department = extra.department;
@@ -767,7 +396,7 @@ module.exports = {
     if (extra.priority) c.priority = extra.priority;
 
     c.statusHistory = c.statusHistory || [];
-    const historyEntry = {
+    c.statusHistory.push({
       id: `sh_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
       status,
       changedBy: changedBy || 'Municipal Official',
@@ -775,72 +404,66 @@ module.exports = {
       timestamp: c.updatedAt,
       remarks: remarks || `Status updated to ${status}.`,
       evidencePhoto: evidencePhoto || null
-    };
-    c.statusHistory.push(historyEntry);
+    });
 
-    write(data);
-    return c;
+    return saveComplaint(c);
   },
 
-  addNote: (id, note) => {
-    const c = data.complaints.find(x => x.id.toUpperCase() === id.trim().toUpperCase());
+  addNote: async (id, note) => {
+    const c = await module.exports.getComplaint(id);
     if (!c) return null;
     c.notes = c.notes || [];
     c.notes.push(note);
     c.updatedAt = new Date().toISOString();
-    write(data);
-    return c;
+    return saveComplaint(c);
   },
 
-  // Notifications
-  getNotifications: (userId) => {
+  // ---------------- Notifications ----------------
+  getNotifications: async (userId) => {
     if (!userId) return [];
-    return data.notifications
-      .filter(n => n.userId === userId || n.userId === 'all_admins' || n.userId === 'broadcast')
-      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    const rows = must(await sb.from('notifications')
+      .select('*')
+      .in('user_id', [userId, 'all_admins', 'broadcast'])
+      .order('created_at', { ascending: false })
+      .limit(500), 'read notifications');
+    return rows.map(notifOut);
   },
 
-  addNotification: (notif) => {
-    const id = `notif_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
-    const full = {
-      id,
-      userId: notif.userId,
-      complaintId: notif.complaintId || null,
+  addNotification: async (notif) => {
+    const row = {
+      id: `notif_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+      user_id: notif.userId,
+      complaint_id: notif.complaintId || null,
       title: notif.title,
       message: notif.message,
       type: notif.type || 'info',
       read: false,
-      createdAt: new Date().toISOString()
+      created_at: new Date().toISOString()
     };
-    data.notifications.unshift(full);
-    if (data.notifications.length > 500) data.notifications.pop();
-    write(data);
-    return full;
+    return notifOut(must(await sb.from('notifications').insert(row).select().single(), 'add notification'));
   },
 
-  markNotificationRead: (id, userId) => {
-    const n = data.notifications.find(x => x.id === id && (x.userId === userId || x.userId === 'all_admins'));
-    if (n) {
-      n.read = true;
-      write(data);
-      return n;
+  markNotificationRead: async (id, userId) => {
+    const row = must(await sb.from('notifications')
+      .update({ read: true })
+      .eq('id', id)
+      .in('user_id', [userId, 'all_admins'])
+      .select()
+      .maybeSingle(), 'mark notification read');
+    return notifOut(row);
+  },
+
+  markAllNotificationsRead: async (userId) => {
+    must(await sb.from('notifications').update({ read: true }).eq('user_id', userId), 'mark all read');
+    if (String(userId).startsWith('usr_admin')) {
+      must(await sb.from('notifications').update({ read: true }).eq('user_id', 'all_admins'), 'mark admin notifications read');
     }
-    return null;
-  },
-
-  markAllNotificationsRead: (userId) => {
-    data.notifications.forEach(n => {
-      if (n.userId === userId || (n.userId === 'all_admins' && userId.startsWith('usr_admin'))) {
-        n.read = true;
-      }
-    });
-    write(data);
     return true;
   },
 
-  // Statistics & Analytics
-  getStatsSummary: () => {
-    const complaints = data.complaints;
+  // ---------------- Statistics & Analytics ----------------
+  getStatsSummary: async () => {
+    const complaints = await allComplaints();
     const total = complaints.length;
     const pending = complaints.filter(c => c.status === 'Submitted').length;
     const verified = complaints.filter(c => c.status === 'Verified').length;
@@ -850,11 +473,8 @@ module.exports = {
     const rejected = complaints.filter(c => c.status === 'Rejected').length;
     const critical = complaints.filter(c => (c.priority === 'Critical' || c.priority === 'High') && c.status !== 'Resolved' && c.status !== 'Rejected').length;
 
-    // Calculate resolution rate
-    const closed = resolved + rejected;
     const resolutionRate = total > 0 ? Math.round((resolved / total) * 100) : 0;
 
-    // Calculate average resolution time for resolved complaints
     let totalResolutionHours = 0;
     let resolvedWithTimes = 0;
     complaints.forEach(c => {
@@ -868,40 +488,32 @@ module.exports = {
     });
     const avgResolutionHours = resolvedWithTimes > 0 ? Math.round(totalResolutionHours / resolvedWithTimes) : 28;
 
+    const flagged = complaints.filter(c => ((c.flags || []).length > 0 || c.reviewStatus === 'held') && c.status !== 'Resolved' && c.status !== 'Rejected').length;
+    const overdue = complaints.filter(c => c.overdue && c.status !== 'Resolved' && c.status !== 'Rejected').length;
+
     return {
-      total,
-      pending,
-      verified,
-      assigned,
-      inProgress,
-      resolved,
-      rejected,
+      flagged, overdue, total, pending, verified, assigned, inProgress, resolved, rejected,
       active: pending + verified + assigned + inProgress,
-      critical,
-      resolutionRate,
-      avgResolutionHours,
+      critical, resolutionRate, avgResolutionHours,
       slaComplianceRate: 92
     };
   },
 
-  getAnalytics: () => {
-    const complaints = data.complaints;
+  getAnalytics: async () => {
+    const complaints = await allComplaints();
 
-    // Category breakdown
     const categoryCounts = {};
     complaints.forEach(c => {
       const cat = c.category || 'Other';
       categoryCounts[cat] = (categoryCounts[cat] || 0) + 1;
     });
 
-    // Area breakdown
     const areaCounts = {};
     complaints.forEach(c => {
       const area = c.area || 'Other';
       areaCounts[area] = (areaCounts[area] || 0) + 1;
     });
 
-    // Department performance
     const deptStats = {};
     DEPARTMENTS.forEach(d => {
       deptStats[d.name] = { total: 0, resolved: 0, inProgress: 0, pending: 0 };
@@ -915,41 +527,26 @@ module.exports = {
       else deptStats[d].pending++;
     });
 
-    // Priority breakdown
     const priorityCounts = { Critical: 0, High: 0, Medium: 0, Low: 0 };
     complaints.forEach(c => {
       const p = c.priority || 'Medium';
       if (priorityCounts[p] !== undefined) priorityCounts[p]++;
     });
 
-    // Status breakdown
-    const statusCounts = {
-      Submitted: 0,
-      Verified: 0,
-      Assigned: 0,
-      'In Progress': 0,
-      Resolved: 0,
-      Rejected: 0
-    };
+    const statusCounts = { Submitted: 0, Verified: 0, Assigned: 0, 'In Progress': 0, Resolved: 0, Rejected: 0 };
     complaints.forEach(c => {
       const s = c.status || 'Submitted';
       if (statusCounts[s] !== undefined) statusCounts[s]++;
     });
 
-    return {
-      categoryCounts,
-      areaCounts,
-      deptStats,
-      priorityCounts,
-      statusCounts
-    };
+    return { categoryCounts, areaCounts, deptStats, priorityCounts, statusCounts };
   },
 
-  reset: () => {
-    data.complaints = [];
-    data.notifications = [];
-    data.sessions = [];
-    data.meta.idCounters = {};
-    write(data);
+  // Demo cleanup: removes complaints, notifications, sessions and the ID counters (users stay)
+  reset: async () => {
+    must(await sb.from('notifications').delete().neq('id', ''), 'reset notifications');
+    must(await sb.from('complaints').delete().neq('id', ''), 'reset complaints');
+    must(await sb.from('sessions').delete().neq('token', ''), 'reset sessions');
+    must(await sb.from('counters').delete().neq('year', ''), 'reset counters');
   }
 };

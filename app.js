@@ -440,10 +440,10 @@ async function loadNotifications() {
             transition: background .2s ease;
           ">
             <div style="display: flex; justify-content: space-between; align-items: center;">
-              <strong style="font-size: 12px; color: var(--ink-900);">${n.title}</strong>
+              <strong style="font-size: 12px; color: var(--ink-900);">${escapeHtml(n.title)}</strong>
               <small style="font-size: 10px; color: var(--ink-400);">${timeAgo(n.createdAt)}</small>
             </div>
-            <p style="margin: 4px 0 0; font-size: 11px; color: var(--ink-600); line-height: 1.4;">${n.message}</p>
+            <p style="margin: 4px 0 0; font-size: 11px; color: var(--ink-600); line-height: 1.4;">${escapeHtml(n.message)}</p>
           </div>
         `).join('');
 
@@ -1079,6 +1079,176 @@ async function findDuplicateComplaints({ category, lat, lng, title }) {
 }
 
 // ============================================================
+// FAKE-REPORT CHECKS: photo fingerprinting (pHash) + resolved-location rule
+// ============================================================
+// These run in the browser so they work without server changes. They are a
+// first line of defence only: copy the same logic to the server before relying on it,
+// because a browser check can be bypassed. Flags are sent with the report so
+// officers (and later the server) can act on them.
+const PHASH_MAX_DIST = 10;         // Hamming distance (of 64 bits) at or below which photos count as the same picture
+const PHASH_EXACT_DIST = 3;        // practically identical
+const PHASH_SCAN_LIMIT = 120;      // newest complaints whose photos are compared
+const RESOLVED_RADIUS_M = 100;     // a new report this close to a resolved one is suspicious...
+const RESOLVED_WINDOW_DAYS = 30;   // ...if the earlier one was resolved within this many days
+const PHASH_CACHE_KEY = 'Dhwani_phash_cache';
+const phashMem = new Map();
+
+function loadPhashCache() {
+  try { Object.entries(JSON.parse(localStorage.getItem(PHASH_CACHE_KEY) || '{}')).forEach(([k, v]) => phashMem.set(k, v)); } catch (e) {}
+}
+function savePhashCache() {
+  try {
+    const o = {};
+    Array.from(phashMem.entries()).slice(-600).forEach(([k, v]) => { o[k] = v; });
+    localStorage.setItem(PHASH_CACHE_KEY, JSON.stringify(o));
+  } catch (e) {}
+}
+
+function loadImageEl(src) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = reject;
+    img.src = src;
+  });
+}
+
+// DCT-based perceptual hash: 32x32 grayscale -> 8x8 low-frequency block -> 64 bits (16 hex chars)
+const PHASH_COS = (() => {
+  const N = 32, t = [];
+  for (let u = 0; u < 8; u++) {
+    t.push(Array.from({ length: N }, (_, x) => Math.cos(((2 * x + 1) * u * Math.PI) / (2 * N))));
+  }
+  return t;
+})();
+function imageToPhash(img) {
+  const N = 32;
+  const canvas = document.createElement('canvas');
+  canvas.width = N; canvas.height = N;
+  const ctx = canvas.getContext('2d', { willReadFrequently: true });
+  ctx.drawImage(img, 0, 0, N, N);
+  const d = ctx.getImageData(0, 0, N, N).data;
+  const gray = [];
+  for (let y = 0; y < N; y++) {
+    const row = [];
+    for (let x = 0; x < N; x++) {
+      const i = (y * N + x) * 4;
+      row.push(0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2]);
+    }
+    gray.push(row);
+  }
+  const coeffs = [];
+  for (let v = 0; v < 8; v++) {
+    for (let u = 0; u < 8; u++) {
+      let sum = 0;
+      for (let y = 0; y < N; y++) {
+        const cy = PHASH_COS[v][y];
+        for (let x = 0; x < N; x++) sum += gray[y][x] * cy * PHASH_COS[u][x];
+      }
+      coeffs.push(sum);
+    }
+  }
+  const sorted = coeffs.slice(1).sort((a, b) => a - b);   // ignore the DC term when taking the median
+  const median = sorted[Math.floor(sorted.length / 2)];
+  let hex = '';
+  for (let i = 0; i < 64; i += 4) {
+    let nib = 0;
+    for (let b = 0; b < 4; b++) nib = (nib << 1) | (coeffs[i + b] > median ? 1 : 0);
+    hex += nib.toString(16);
+  }
+  return hex;
+}
+function phashDistance(a, b) {
+  let dist = 0;
+  for (let i = 0; i < a.length && i < b.length; i++) {
+    let x = parseInt(a[i], 16) ^ parseInt(b[i], 16);
+    while (x) { dist += x & 1; x >>= 1; }
+  }
+  return dist;
+}
+async function phashOfUrl(url) {
+  if (phashMem.has(url)) return phashMem.get(url);
+  const h = imageToPhash(await loadImageEl(url));
+  phashMem.set(url, h);
+  return h;
+}
+
+// Compares the photos being uploaded with every earlier report photo AND officer resolution photo
+async function findPhotoMatches(files) {
+  const imgs = (files || []).filter(f => f.type && f.type.startsWith('image/'));
+  if (!imgs.length) return [];
+  if (!phashMem.size) loadPhashCache();
+
+  const mine = [];
+  for (const f of imgs) {
+    const objUrl = URL.createObjectURL(f);
+    try { mine.push({ name: f.name, hash: imageToPhash(await loadImageEl(objUrl)) }); }
+    catch (e) { /* unreadable image: skip */ }
+    finally { URL.revokeObjectURL(objUrl); }
+  }
+  if (!mine.length) return [];
+
+  const list = await fetchComplaints();
+  const recent = [...list].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)).slice(0, PHASH_SCAN_LIMIT);
+  const targets = [];
+  recent.forEach(c => {
+    const urls = new Set([...(c.photos || []), ...(c.photo ? [c.photo] : []), ...(c.resolutionPhoto ? [c.resolutionPhoto] : [])]);
+    urls.forEach(u => {
+      if (!u || /\.(mp4|webm|mov)(\?|$)/i.test(u)) return;
+      targets.push({ c, url: u, kind: u === c.resolutionPhoto ? 'resolution' : 'report' });
+    });
+  });
+
+  let idx = 0;
+  const worker = async () => {
+    while (idx < targets.length) {
+      const t = targets[idx++];
+      try { t.hash = await phashOfUrl(t.url); } catch (e) { /* photo not loadable: skip */ }
+    }
+  };
+  await Promise.all([worker(), worker(), worker(), worker()]);
+  savePhashCache();
+
+  const best = new Map();
+  targets.forEach(t => {
+    if (!t.hash) return;
+    mine.forEach(m => {
+      const dist = phashDistance(m.hash, t.hash);
+      if (dist <= PHASH_MAX_DIST && (!best.has(t.c.id) || dist < best.get(t.c.id).dist)) {
+        best.set(t.c.id, { c: t.c, url: t.url, kind: t.kind, dist, fileName: m.name });
+      }
+    });
+  });
+  return Array.from(best.values()).sort((a, b) => a.dist - b.dist).slice(0, 3);
+}
+
+// Same category, very close, and resolved recently: the issue was just fixed here
+async function findNearbyResolved({ category, lat, lng }) {
+  if (!category || typeof lat !== 'number') return [];
+  const cutoff = Date.now() - RESOLVED_WINDOW_DAYS * 86400000;
+  const list = await fetchComplaints({ category });
+  const out = [];
+  list.forEach(c => {
+    if (c.status !== 'Resolved') return;
+    const cLat = c.lat ?? (c.coords && c.coords[0]);
+    const cLng = c.lng ?? (c.coords && c.coords[1]);
+    if (typeof cLat !== 'number' || typeof cLng !== 'number') return;
+    const when = new Date(c.resolvedAt || c.updatedAt || c.createdAt).getTime();
+    if (!(when >= cutoff)) return;
+    const dist = distanceMeters(lat, lng, cLat, cLng);
+    if (dist <= RESOLVED_RADIUS_M) out.push({ c, dist, when });
+  });
+  return out.sort((a, b) => a.dist - b.dist).slice(0, 3);
+}
+
+function flagBadgeHtml(c) {
+  const overdue = c.overdue && c.status !== 'Resolved' && c.status !== 'Rejected'
+    ? `<span class="anon-chip" style="background:#fee2e2; color:#991b1b; margin-left:6px;" title="SLA deadline passed; escalated automatically">⏰ Overdue</span>` : '';
+  if (!Array.isArray(c.flags) || !c.flags.length) return overdue;
+  return overdue + `<span class="anon-chip" style="background:#fef3c7; color:#92400e; margin-left:6px;" title="${escapeHtml(c.flags.join(', '))}">⚠ Flagged</span>`;
+}
+
+// ============================================================
 // PAGE: REPORT ISSUE (/report)
 // ============================================================
 function renderReportPage() {
@@ -1135,7 +1305,7 @@ function renderReportPage() {
             <label style="display: block; font-weight: 800; font-size: 13px; margin-bottom: 8px;">
               Issue Title <sup>*</sup>
             </label>
-            <input id="reportTitle" class="form-input" placeholder="e.g. Dangerous crater pothole outside Kadri primary school" required maxlength="120">
+            <input id="reportTitle" class="form-input" placeholder="e.g. Dangerous crater pothole outside Kadri primary school" maxlength="120">
           </div>
 
           <div style="margin-bottom: 24px;">
@@ -1184,9 +1354,9 @@ function renderReportPage() {
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
             <div>
               <label style="display: block; font-weight: 800; font-size: 13px; margin-bottom: 8px;">
-                Area / Ward <sup>*</sup>
+                Area / Ward <small style="font-weight:500;color:var(--ink-400);">(auto-detected)</small>
               </label>
-              <select id="reportArea" class="form-select" required>
+              <select id="reportArea" class="form-select">
                 <option value="">Select Mangaluru area...</option>
                 <option value="Kadri" selected>Kadri</option>
                 <option value="Hampankatta">Hampankatta</option>
@@ -1244,7 +1414,7 @@ function renderReportPage() {
           <!-- Multi-file Upload Box -->
           <div style="margin-bottom: 24px;">
             <label style="display: block; font-weight: 800; font-size: 13px; margin-bottom: 8px;">
-              Photos or Video Evidence (Max 5 files, 15MB each)
+              Photo Evidence <span style="color:#dc2626;">*</span> (at least 1 photo; max 5 files, 15MB each)
             </label>
             <label class="upload-dropzone" for="reportFileInput">
               <input id="reportFileInput" type="file" multiple accept="image/*,video/mp4" style="display: none;">
@@ -1285,11 +1455,12 @@ function renderReportPage() {
           </div>
 
           <div style="background: var(--ink-50); border: 1px solid var(--ink-100); border-radius: 10px; padding: 12px 14px; font-size: 11px; color: var(--ink-600); margin-bottom: 24px;">
-            🔒 <b>Privacy Protection:</b> Your phone number and email are never shown publicly on the tracking board. Choose "Report anonymously" to hide them from officers too.
+            🔒 <b>Privacy Protection:</b> Your phone number and email are never shown publicly on the tracking board. Choose "Report anonymously" to hide your name and contact from officers and the public (the system still keeps a private internal link to your account only to stop spam and fake reports).
           </div>
 
           <div id="wardAssignBox" style="margin-bottom: 16px;"></div>
           <div id="duplicateBox" style="margin-bottom: 16px;"></div>
+          <div id="integrityBox" style="margin-bottom: 16px;"></div>
 
           <button id="reportSubmitBtn" class="btn btn-primary btn-lg" style="width: 100%;" type="submit">
             Submit Civic Complaint →
@@ -1365,6 +1536,57 @@ function renderReportPage() {
   // ---- Ward assignment + duplicate detection (live, as the form is filled) ----
   let dupTimer = null;
   let dupAckKey = null;   // set when the citizen chooses "Submit anyway" for a given set of matches
+  let integAckKey = null; // set when the citizen confirms a flagged photo / recently-resolved-location report
+
+  function renderIntegrityBox(res) {
+    const box = document.getElementById('integrityBox');
+    if (!box) return;
+    if (!res.photoMatches.length && !res.resolvedNear.length) { box.innerHTML = ''; return; }
+    const key = res.photoMatches.map(m => m.c.id).join(',') + '|' + res.resolvedNear.map(m => m.c.id).join(',');
+    const acked = integAckKey === key;
+    box.innerHTML = `
+      <div style="background:#fef2f2; border:1.5px solid #fecaca; border-radius:12px; padding:16px;">
+        <strong style="display:block; font-size:14px; color:#991b1b;">🛡️ Please double-check before submitting</strong>
+        ${res.photoMatches.length ? `
+          <p style="margin:6px 0 8px; font-size:12px; color:#991b1b;">
+            ${res.photoMatches.length === 1 ? 'A photo you uploaded matches' : 'Photos you uploaded match'} a picture already on the platform. Reusing an old photo is treated as a false report.
+          </p>
+          ${res.photoMatches.map(m => `
+            <div style="background:#fff; border:1px solid #fecaca; border-radius:10px; padding:8px 12px; margin-bottom:8px; font-size:12px; color:var(--ink-700);">
+              <b>${escapeHtml(m.fileName)}</b> looks like ${m.kind === 'resolution' ? 'the officer resolution photo' : 'a photo'} on
+              <a href="/track?id=${encodeURIComponent(m.c.id)}" data-link style="font-weight:800; color:var(--brand-700);">${escapeHtml(m.c.id)}</a>
+              (${escapeHtml(m.c.status)}) · ${m.dist <= PHASH_EXACT_DIST ? 'same image' : 'very similar image'}
+            </div>`).join('')}` : ''}
+        ${res.resolvedNear.length ? `
+          <p style="margin:6px 0 8px; font-size:12px; color:#991b1b;">
+            An issue of this type was marked <b>Resolved</b> within ${RESOLVED_RADIUS_M} m of this spot in the last ${RESOLVED_WINDOW_DAYS} days.
+          </p>
+          ${res.resolvedNear.map(m => `
+            <div style="background:#fff; border:1px solid #fecaca; border-radius:10px; padding:8px 12px; margin-bottom:8px; font-size:12px; color:var(--ink-700);">
+              <a href="/track?id=${encodeURIComponent(m.c.id)}" data-link style="font-weight:800; color:var(--brand-700);">${escapeHtml(m.c.id)}</a>
+              · ${escapeHtml(m.c.title)} · resolved ${formatDate(new Date(m.when).toISOString())} · ${Math.round(m.dist)} m away
+            </div>`).join('')}` : ''}
+        <p style="margin:6px 0 10px; font-size:12px; color:var(--ink-600);">
+          If the problem is genuinely new or the repair failed, you can continue. The report will be marked for officer verification.
+          Use a fresh photo taken at the spot.
+        </p>
+        <button type="button" id="integSubmitBtn" class="btn btn-ghost btn-sm" ${acked ? 'disabled' : ''}>
+          ${acked ? '✓ Submitting for officer review' : 'This is a new, real issue — submit for officer review'}
+        </button>
+      </div>`;
+    document.getElementById('integSubmitBtn')?.addEventListener('click', () => {
+      integAckKey = key;
+      document.getElementById('reportIssueForm')?.requestSubmit();
+    });
+  }
+
+  async function runIntegrityChecks() {
+    const res = { photoMatches: [], resolvedNear: [] };
+    try { res.photoMatches = await findPhotoMatches(selectedFiles); } catch (e) { /* never block a citizen on a failed check */ }
+    try { res.resolvedNear = await findNearbyResolved({ category: selectedCategory, lat: chosenLat, lng: chosenLng }); } catch (e) {}
+    renderIntegrityBox(res);
+    return res;
+  }
 
   function renderWardBox(w) {
     const box = document.getElementById('wardAssignBox');
@@ -1536,7 +1758,8 @@ function renderReportPage() {
     submitBtn.innerHTML = `<span>Submitting report to MCC...</span>`;
 
     const title = document.getElementById('reportTitle')?.value.trim();
-    const area = document.getElementById('reportArea')?.value;
+    const detectedWard = assignWard(chosenLat, chosenLng);
+    const area = document.getElementById('reportArea')?.value || (detectedWard && detectedWard.area) || '';
     const landmark = document.getElementById('reportLandmark')?.value.trim();
     const description = document.getElementById('reportDescription')?.value.trim();
     const priority = document.getElementById('reportPriority')?.value;
@@ -1544,8 +1767,16 @@ function renderReportPage() {
     const name = isAnonymous ? '' : document.getElementById('reportName')?.value.trim();
     const phone = isAnonymous ? '' : document.getElementById('reportPhone')?.value.trim();
 
-    if (!selectedCategory || !area || !description || !title) {
-      showToast('Please fill all required fields', 'error');
+    if (!selectedCategory || !description) {
+      showToast('Please choose a category and describe the issue', 'error');
+      submitBtn.disabled = false;
+      submitBtn.innerHTML = `Submit Civic Complaint →`;
+      return;
+    }
+
+    if (!selectedFiles.some(f => f.type && f.type.startsWith('image/'))) {
+      showToast('Please add at least one photo of the issue. Reports without a photo are not accepted.', 'error');
+      document.getElementById('reportFileInput')?.closest('label')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
       submitBtn.disabled = false;
       submitBtn.innerHTML = `Submit Civic Complaint →`;
       return;
@@ -1562,6 +1793,21 @@ function renderReportPage() {
       submitBtn.innerHTML = `Submit Civic Complaint →`;
       return;
     }
+
+    // Fake-report checks: photo fingerprint match + recently-resolved location
+    submitBtn.innerHTML = `<span>Checking photos...</span>`;
+    const integrity = await runIntegrityChecks();
+    const integKey = integrity.photoMatches.map(m => m.c.id).join(',') + '|' + integrity.resolvedNear.map(m => m.c.id).join(',');
+    const integFlagged = integrity.photoMatches.length > 0 || integrity.resolvedNear.length > 0;
+    if (integFlagged && integAckKey !== integKey) {
+      showToast('Please review the warning before submitting.', 'error');
+      document.getElementById('integrityBox')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      submitBtn.disabled = false;
+      submitBtn.innerHTML = `Submit Civic Complaint →`;
+      return;
+    }
+    submitBtn.innerHTML = `<span>Submitting report to MCC...</span>`;
+    // Flags, trust score, ward and zone are computed by the server; the browser checks above only warn the citizen.
 
     try {
       const ward = assignWard(chosenLat, chosenLng);
@@ -1588,25 +1834,16 @@ function renderReportPage() {
         return;
       }
 
-      // Always sent with the login token. "Anonymous" only hides your name
-      // and phone from the public board and officers.
-      const created = await apiRequest('/api/complaints', {
-        method: 'POST',
-        body: JSON.stringify(payload)
+      // Sent as one multipart request together with the photos: the server rejects reports with no image.
+      const formData = new FormData();
+      Object.entries(payload).forEach(([k, v]) => {
+        if (v !== null && v !== undefined) formData.append(k, String(v));
       });
+      selectedFiles.forEach(f => formData.append('files', f));
+      const created = await apiRequest('/api/complaints', { method: 'POST', body: formData });
 
       // Remember the server-issued delete token so this device can delete the report later
       if (created.deleteToken) saveOwnedToken(created.id, created.deleteToken);
-
-      // Upload any selected media files
-      if (selectedFiles.length > 0) {
-        const formData = new FormData();
-        selectedFiles.forEach(f => formData.append('files', f));
-        await apiRequest(`/api/complaints/${created.id}/upload`, {
-          method: 'POST',
-          body: formData
-        });
-      }
 
       showToast(`Complaint ${created.id} submitted successfully!`, 'success');
 
@@ -2790,10 +3027,10 @@ async function renderNotificationsPage() {
             <div style="font-size: 24px;">${n.type === 'resolution' ? '✅' : '📢'}</div>
             <div style="flex: 1;">
               <div style="display: flex; justify-content: space-between; align-items: center;">
-                <strong style="font-size: 14px; color: var(--ink-900);">${n.title}</strong>
+                <strong style="font-size: 14px; color: var(--ink-900);">${escapeHtml(n.title)}</strong>
                 <small style="font-size: 11px; color: var(--ink-400);">${formatDateTime(n.createdAt)}</small>
               </div>
-              <p style="margin: 6px 0 0; font-size: 13px; color: var(--ink-700); line-height: 1.5;">${n.message}</p>
+              <p style="margin: 6px 0 0; font-size: 13px; color: var(--ink-700); line-height: 1.5;">${escapeHtml(n.message)}</p>
               ${n.complaintId ? `
                 <span style="display: inline-block; margin-top: 8px; font-size: 11px; font-weight: 800; color: var(--brand-700);">
                   View Complaint [${n.complaintId}] →
@@ -2916,21 +3153,6 @@ function renderLoginPage() {
           <p style="color: var(--ink-500); font-size: 13px; margin: 0;">Access your submitted reports and municipal dashboard.</p>
         </div>
 
-        <!-- 1-Click Demo Logins for Instant Evaluation -->
-        <div style="background: var(--ink-50); border: 1px solid var(--ink-100); border-radius: var(--radius); padding: 14px; margin-bottom: 22px;">
-          <small style="display: block; font-size: 10px; font-weight: 800; text-transform: uppercase; color: var(--ink-500); margin-bottom: 8px;">
-            ⚡ Quick 1-Click Demo Evaluation
-          </small>
-          <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-            <button id="quickCitizenLoginBtn" type="button" class="btn btn-ghost btn-sm" style="flex: 1;">
-              👤 Demo Citizen
-            </button>
-            <button id="quickAdminLoginBtn" type="button" class="btn btn-primary btn-sm" style="flex: 1;">
-              🏛️ Demo Admin
-            </button>
-          </div>
-        </div>
-
         <form id="loginForm">
           <div style="margin-bottom: 16px;">
             <label style="display: block; font-weight: 800; font-size: 12px; margin-bottom: 6px;">Email Address</label>
@@ -2953,19 +3175,6 @@ function renderLoginPage() {
       </div>
     </div>
   `;
-
-  // Quick Demo Buttons
-  document.getElementById('quickCitizenLoginBtn')?.addEventListener('click', () => {
-    document.getElementById('loginEmail').value = 'citizen@example.com';
-    document.getElementById('loginPassword').value = 'citizen123';
-    document.getElementById('loginForm')?.dispatchEvent(new Event('submit'));
-  });
-
-  document.getElementById('quickAdminLoginBtn')?.addEventListener('click', () => {
-    document.getElementById('loginEmail').value = 'admin@Dhwani.org';
-    document.getElementById('loginPassword').value = 'admin123';
-    document.getElementById('loginForm')?.dispatchEvent(new Event('submit'));
-  });
 
   document.getElementById('loginForm')?.addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -3052,7 +3261,7 @@ function renderRegisterPage() {
     try {
       const res = await apiRequest('/api/auth/register', {
         method: 'POST',
-        body: JSON.stringify({ name, email, phone, password, role: 'citizen' })
+        body: JSON.stringify({ name, email, phone, password })
       });
 
       state.token = res.token;
@@ -3278,7 +3487,7 @@ async function renderAdminDashboardPage() {
               <tr>
                 <td class="col-id"><span class="ref-id">${escapeHtml(c.id)}</span></td>
                 <td class="col-title">
-                  <div class="cell-title" title="${escapeHtml(c.title)}">${escapeHtml(c.title)}</div>
+                  <div class="cell-title" title="${escapeHtml(c.title)}">${escapeHtml(c.title)}${flagBadgeHtml(c)}</div>
                   <small class="cell-sub">${escapeHtml(c.category)}</small>
                 </td>
                 <td>${escapeHtml(c.area)}</td>
@@ -3441,7 +3650,7 @@ async function renderAdminComplaintsPage() {
               <tr>
                 <td class="col-id"><span class="ref-id">${id}</span></td>
                 <td class="col-title">
-                  <div class="cell-title" title="${escapeHtml(c.title)}">${escapeHtml(c.title)}</div>
+                  <div class="cell-title" title="${escapeHtml(c.title)}">${escapeHtml(c.title)}${flagBadgeHtml(c)}</div>
                   <small class="cell-sub">${escapeHtml(c.category)}</small>
                 </td>
                 <td class="col-loc">
