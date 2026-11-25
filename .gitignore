@@ -1,0 +1,22 @@
+# Dependencies and generated build output
+**/node_modules/
+**/venv/
+**/.venv/
+**/dist/
+**/build/
+**/target/
+**/__pycache__/
+
+# Local runtime data and uploads
+server/data.json
+server/uploads/
+**/uploads/
+*.log
+
+# Local environment and editor files
+.env
+.env.*
+!.env.example
+.vscode/
+.DS_Store
+Thumbs.db
