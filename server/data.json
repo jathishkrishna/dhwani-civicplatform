@@ -1,0 +1,1111 @@
+{
+  "complaints": [
+    {
+      "id": "CP-2026-00012",
+      "title": "gfdxfghj",
+      "category": "Garbage and waste management",
+      "area": "Kadri",
+      "landmark": "",
+      "description": "wrdfcghvb",
+      "name": "Anonymous Citizen",
+      "phone": "",
+      "email": "",
+      "reporterId": null,
+      "reporterName": "Anonymous Citizen",
+      "reporterPhone": "",
+      "reporterEmail": "",
+      "anonymous": false,
+      "deleteTokenHash": "0a1780976f23885be0d3b62dbe0ef83164574b8a270d5394c522021ffa4aa457",
+      "voters": [
+        "d:a88c74da-ba0a-487a-ac3e-3ec8c4511958"
+      ],
+      "photos": [],
+      "videos": [],
+      "photo": null,
+      "status": "Resolved",
+      "priority": "Medium",
+      "department": "Health & Sanitation Section",
+      "officer": "Suresh Nayak (Sanitary Inspector)",
+      "slaHours": "24 hours",
+      "expectedResolutionDate": "2026-11-26T03:35:35.845Z",
+      "resolutionPhoto": null,
+      "resolutionRemarks": "erfcghvj",
+      "rejectionReason": null,
+      "lat": 12.895,
+      "lng": 74.855,
+      "coords": [
+        12.895,
+        74.855
+      ],
+      "isPublic": true,
+      "createdAt": "2026-11-25T03:35:35.845Z",
+      "updatedAt": "2026-11-25T03:37:16.770Z",
+      "resolvedAt": "2026-11-25T03:37:16.770Z",
+      "statusHistory": [
+        {
+          "id": "sh_1795577735846_init",
+          "status": "Submitted",
+          "changedBy": "Anonymous Citizen",
+          "role": "Citizen",
+          "timestamp": "2026-11-25T03:35:35.845Z",
+          "remarks": "Complaint registered successfully in Dhwani system.",
+          "evidencePhoto": null
+        },
+        {
+          "id": "sh_1795577836770_bgcj",
+          "status": "Resolved",
+          "changedBy": "Commissioner M. Hegde",
+          "role": "Municipal Authority",
+          "timestamp": "2026-11-25T03:37:16.770Z",
+          "remarks": "erfcghvj",
+          "evidencePhoto": null
+        }
+      ],
+      "notes": []
+    },
+    {
+      "id": "CP-2026-00011",
+      "title": "pothole",
+      "category": "Road damage and potholes",
+      "area": "Kadri",
+      "landmark": "",
+      "description": "hfngdbsvaccdas",
+      "name": "Anonymous Citizen",
+      "phone": "",
+      "email": "",
+      "reporterId": null,
+      "reporterName": "Anonymous Citizen",
+      "reporterPhone": "",
+      "reporterEmail": "",
+      "anonymous": true,
+      "deleteTokenHash": "9f08e5c6fffac66bede3ca164f226b6a66cb4c30398f4d4f355df8246e96b245",
+      "voters": [],
+      "photos": [],
+      "videos": [],
+      "photo": null,
+      "status": "Submitted",
+      "priority": "Medium",
+      "department": "PWD (Roads & Infrastructure)",
+      "officer": "Ravi Kumar (JE - PWD Kadri)",
+      "slaHours": "7 days",
+      "expectedResolutionDate": "2026-12-02T02:22:04.799Z",
+      "resolutionPhoto": null,
+      "resolutionRemarks": null,
+      "rejectionReason": null,
+      "lat": 12.895,
+      "lng": 74.855,
+      "coords": [
+        12.895,
+        74.855
+      ],
+      "isPublic": true,
+      "createdAt": "2026-11-25T02:22:04.799Z",
+      "updatedAt": "2026-11-25T02:22:04.799Z",
+      "resolvedAt": null,
+      "statusHistory": [
+        {
+          "id": "sh_1795573324799_init",
+          "status": "Submitted",
+          "changedBy": "Anonymous Citizen",
+          "role": "Citizen",
+          "timestamp": "2026-11-25T02:22:04.799Z",
+          "remarks": "Complaint registered successfully in Dhwani system.",
+          "evidencePhoto": null
+        }
+      ],
+      "notes": []
+    },
+    {
+      "id": "CP-2026-00010",
+      "title": "tereafw",
+      "category": "Garbage and waste management",
+      "area": "Kadri",
+      "landmark": "",
+      "description": "MHFGDBSDVAa",
+      "name": "d",
+      "phone": "FA",
+      "email": "",
+      "reporterId": null,
+      "reporterName": "d",
+      "reporterPhone": "FA",
+      "reporterEmail": "",
+      "photos": [],
+      "videos": [],
+      "photo": null,
+      "status": "Submitted",
+      "priority": "Medium",
+      "department": "Health & Sanitation Section",
+      "officer": "Suresh Nayak (Sanitary Inspector)",
+      "slaHours": "24 hours",
+      "expectedResolutionDate": "2026-11-25T15:17:02.979Z",
+      "resolutionPhoto": null,
+      "resolutionRemarks": null,
+      "rejectionReason": null,
+      "lat": 12.7895,
+      "lng": 74.9825,
+      "coords": [
+        12.7895,
+        74.9825
+      ],
+      "isPublic": true,
+      "createdAt": "2026-11-24T15:17:02.979Z",
+      "updatedAt": "2026-11-24T15:17:02.979Z",
+      "resolvedAt": null,
+      "statusHistory": [
+        {
+          "id": "sh_1795533422979_init",
+          "status": "Submitted",
+          "changedBy": "d",
+          "role": "Citizen",
+          "timestamp": "2026-11-24T15:17:02.979Z",
+          "remarks": "Complaint registered successfully in Dhwani system.",
+          "evidencePhoto": null
+        }
+      ],
+      "notes": [],
+      "voters": [],
+      "anonymous": false
+    },
+    {
+      "id": "CP-2026-00009",
+      "title": "awyersui",
+      "category": "Water leakage",
+      "area": "Kadri",
+      "landmark": "55d",
+      "description": "2WAERSDRGYIJ[",
+      "name": "SRDTFYUI",
+      "phone": "824 2220300",
+      "email": "",
+      "reporterId": "usr_citizen_ananya",
+      "reporterName": "SRDTFYUI",
+      "reporterPhone": "824 2220300",
+      "reporterEmail": "",
+      "photos": [
+        "/uploads/1794987755708-151198192.jpg"
+      ],
+      "videos": [],
+      "photo": "/uploads/1794987755708-151198192.jpg",
+      "status": "Submitted",
+      "priority": "Low",
+      "department": "Mangaluru City Water Supply Board",
+      "officer": "Rajesh Bhat (Assistant Executive Engineer)",
+      "slaHours": "48 hours",
+      "expectedResolutionDate": "2026-11-20T07:42:35.631Z",
+      "resolutionPhoto": null,
+      "resolutionRemarks": null,
+      "rejectionReason": null,
+      "lat": 12.895,
+      "lng": 74.855,
+      "coords": [
+        12.895,
+        74.855
+      ],
+      "isPublic": true,
+      "createdAt": "2026-11-18T07:42:35.631Z",
+      "updatedAt": "2026-11-18T07:42:35.780Z",
+      "resolvedAt": null,
+      "statusHistory": [
+        {
+          "id": "sh_1794987755631_init",
+          "status": "Submitted",
+          "changedBy": "SRDTFYUI",
+          "role": "Citizen",
+          "timestamp": "2026-11-18T07:42:35.631Z",
+          "remarks": "Complaint registered successfully in Dhwani system.",
+          "evidencePhoto": null
+        }
+      ],
+      "notes": [],
+      "voters": [],
+      "anonymous": false
+    },
+    {
+      "id": "CP-2026-00008",
+      "title": "gdjgfj",
+      "category": "Garbage and waste management",
+      "area": "Other Mangaluru",
+      "landmark": "bhjgkhj",
+      "description": "vghjfvghjgc",
+      "name": "bhjk",
+      "phone": "123453678",
+      "email": "",
+      "reporterId": "usr_citizen_ananya",
+      "reporterName": "bhjk",
+      "reporterPhone": "123453678",
+      "reporterEmail": "",
+      "photos": [],
+      "videos": [],
+      "photo": null,
+      "status": "Submitted",
+      "priority": "Medium",
+      "department": "Health & Sanitation Section",
+      "officer": "Suresh Nayak (Sanitary Inspector)",
+      "slaHours": "24 hours",
+      "expectedResolutionDate": "2026-10-29T06:17:30.712Z",
+      "resolutionPhoto": null,
+      "resolutionRemarks": null,
+      "rejectionReason": null,
+      "lat": 12.9141,
+      "lng": 74.856,
+      "coords": [
+        12.9141,
+        74.856
+      ],
+      "isPublic": true,
+      "createdAt": "2026-10-28T06:17:30.712Z",
+      "updatedAt": "2026-10-28T06:17:30.712Z",
+      "resolvedAt": null,
+      "statusHistory": [
+        {
+          "id": "sh_1793168250712_init",
+          "status": "Submitted",
+          "changedBy": "bhjk",
+          "role": "Citizen",
+          "timestamp": "2026-10-28T06:17:30.712Z",
+          "remarks": "Complaint registered successfully in Dhwani system.",
+          "evidencePhoto": null
+        }
+      ],
+      "notes": [],
+      "voters": [],
+      "anonymous": false
+    },
+    {
+      "id": "CP-2026-00007",
+      "title": "Severe water pipe rupture near Kankanady bypass",
+      "category": "Water leakage",
+      "area": "Kankanady",
+      "landmark": "Opposite Father Muller Hospital Gate",
+      "description": "Fresh water flooding the service road for 4 hours.",
+      "name": "Ananya Rao",
+      "phone": "9876543210",
+      "email": "citizen@example.com",
+      "reporterId": "usr_citizen_ananya",
+      "reporterName": "Ananya Rao",
+      "reporterPhone": "9876543210",
+      "reporterEmail": "citizen@example.com",
+      "photos": [],
+      "videos": [],
+      "photo": null,
+      "status": "In Progress",
+      "priority": "Critical",
+      "department": "Mangaluru City Water Supply Board",
+      "officer": "Rajesh Bhat (Assistant Executive Engineer)",
+      "slaHours": "48 hours",
+      "expectedResolutionDate": "2026-10-16T07:38:08.035Z",
+      "resolutionPhoto": null,
+      "resolutionRemarks": null,
+      "rejectionReason": null,
+      "lat": 12.876,
+      "lng": 74.862,
+      "coords": [
+        12.876,
+        74.862
+      ],
+      "isPublic": true,
+      "createdAt": "2026-10-14T07:38:08.035Z",
+      "updatedAt": "2026-10-14T07:38:08.081Z",
+      "resolvedAt": null,
+      "statusHistory": [
+        {
+          "id": "sh_1791963488035_init",
+          "status": "Submitted",
+          "changedBy": "Ananya Rao",
+          "role": "Citizen",
+          "timestamp": "2026-10-14T07:38:08.035Z",
+          "remarks": "Complaint registered successfully in Dhwani system.",
+          "evidencePhoto": null
+        },
+        {
+          "id": "sh_1791963488081_q1zh",
+          "status": "In Progress",
+          "changedBy": "Commissioner M. Hegde",
+          "role": "Municipal Authority",
+          "timestamp": "2026-10-14T07:38:08.081Z",
+          "remarks": "Excavation team dispatched with replacement pipe section.",
+          "evidencePhoto": null
+        }
+      ],
+      "notes": [],
+      "voters": [],
+      "anonymous": false
+    },
+    {
+      "id": "CP-2026-00006",
+      "title": "Severe water pipe rupture near Kankanady bypass",
+      "category": "Water leakage",
+      "area": "Kankanady",
+      "landmark": "Opposite Father Muller Hospital Gate",
+      "description": "Fresh water flooding the service road for 4 hours.",
+      "name": "Ananya Rao",
+      "phone": "9876543210",
+      "email": "citizen@example.com",
+      "reporterId": "usr_citizen_ananya",
+      "reporterName": "Ananya Rao",
+      "reporterPhone": "9876543210",
+      "reporterEmail": "citizen@example.com",
+      "photos": [],
+      "videos": [],
+      "photo": null,
+      "status": "Resolved",
+      "priority": "Critical",
+      "department": "Mangaluru City Water Supply Board",
+      "officer": "Rajesh Bhat (Assistant Executive Engineer)",
+      "slaHours": "48 hours",
+      "expectedResolutionDate": "2026-10-16T07:24:07.191Z",
+      "resolutionPhoto": null,
+      "resolutionRemarks": null,
+      "rejectionReason": null,
+      "lat": 12.876,
+      "lng": 74.862,
+      "coords": [
+        12.876,
+        74.862
+      ],
+      "isPublic": true,
+      "createdAt": "2026-10-14T07:24:07.191Z",
+      "updatedAt": "2026-10-14T07:24:07.251Z",
+      "resolvedAt": "2026-10-14T07:24:07.251Z",
+      "statusHistory": [
+        {
+          "id": "sh_1791962647191_init",
+          "status": "Submitted",
+          "changedBy": "Ananya Rao",
+          "role": "Citizen",
+          "timestamp": "2026-10-14T07:24:07.191Z",
+          "remarks": "Complaint registered successfully in Dhwani system.",
+          "evidencePhoto": null
+        },
+        {
+          "id": "sh_1791962647231_sfpw",
+          "status": "In Progress",
+          "changedBy": "Commissioner M. Hegde",
+          "role": "Municipal Authority",
+          "timestamp": "2026-10-14T07:24:07.231Z",
+          "remarks": "Excavation team dispatched with replacement pipe section.",
+          "evidencePhoto": null
+        },
+        {
+          "id": "sh_1791962647251_okt2",
+          "status": "Resolved",
+          "changedBy": "Ananya Rao",
+          "role": "Authorized Officer",
+          "timestamp": "2026-10-14T07:24:07.251Z",
+          "remarks": "Status updated to Resolved.",
+          "evidencePhoto": null
+        }
+      ],
+      "notes": [],
+      "voters": [],
+      "anonymous": false
+    },
+    {
+      "id": "CP-MNG-260927-4821",
+      "category": "Pothole / Road Damage",
+      "area": "Kadri",
+      "landmark": "Near Kadri Park entrance",
+      "description": "Large pothole causing traffic slowdowns.",
+      "name": "",
+      "phone": "",
+      "photo": null,
+      "status": "In Progress",
+      "lat": 12.895,
+      "lng": 74.855,
+      "createdAt": "2026-09-24T10:29:01.435Z",
+      "updatedAt": "2026-09-26T10:29:01.435Z",
+      "notes": [
+        {
+          "text": "Inspection scheduled.",
+          "at": "2026-09-26T10:29:01.435Z"
+        }
+      ],
+      "title": "Pothole / Road Damage reported at Kadri",
+      "priority": "High",
+      "photos": [],
+      "videos": [],
+      "coords": [
+        12.895,
+        74.855
+      ],
+      "slaHours": "7 days",
+      "statusHistory": [
+        {
+          "id": "sh_1791962040380_init_0",
+          "status": "Submitted",
+          "changedBy": "Citizen",
+          "role": "Citizen",
+          "timestamp": "2026-09-24T10:29:01.435Z",
+          "remarks": "Complaint filed through Dhwani online portal.",
+          "evidencePhoto": null
+        },
+        {
+          "id": "sh_1791962040380_prog_0",
+          "status": "In Progress",
+          "changedBy": "Municipal Desk",
+          "role": "Municipal Authority",
+          "timestamp": "2026-09-26T10:29:01.435Z",
+          "remarks": "Inspection scheduled.",
+          "evidencePhoto": null
+        }
+      ],
+      "reporterId": "usr_citizen_ananya",
+      "voters": [],
+      "anonymous": false
+    },
+    {
+      "id": "CP-MNG-260925-1937",
+      "category": "Garbage / Illegal Dumping",
+      "area": "Hampankatta",
+      "landmark": "Behind central market",
+      "description": "Garbage pile-up attracting stray animals.",
+      "name": "",
+      "phone": "",
+      "photo": null,
+      "status": "Submitted",
+      "lat": 12.8698,
+      "lng": 74.8426,
+      "createdAt": "2026-09-22T10:29:01.435Z",
+      "updatedAt": "2026-09-22T10:29:01.435Z",
+      "notes": [],
+      "title": "Garbage / Illegal Dumping reported at Hampankatta",
+      "priority": "Low",
+      "photos": [],
+      "videos": [],
+      "coords": [
+        12.8698,
+        74.8426
+      ],
+      "slaHours": "7 days",
+      "statusHistory": [
+        {
+          "id": "sh_1791962040380_init_1",
+          "status": "Submitted",
+          "changedBy": "Citizen",
+          "role": "Citizen",
+          "timestamp": "2026-09-22T10:29:01.435Z",
+          "remarks": "Complaint filed through Dhwani online portal.",
+          "evidencePhoto": null
+        }
+      ],
+      "reporterId": "usr_citizen_ananya",
+      "voters": [],
+      "anonymous": false
+    },
+    {
+      "id": "CP-2026-00001",
+      "title": "Deep crater pothole on Kadri Temple Road",
+      "description": "Multiple deep potholes right outside the primary school gate. Water accumulates during rains making it dangerous for two-wheelers and children.",
+      "category": "Road damage and potholes",
+      "area": "Kadri",
+      "landmark": "Near Kadri Manjunatha Temple South Gate",
+      "lat": 12.8948,
+      "lng": 74.8552,
+      "coords": [
+        12.8948,
+        74.8552
+      ],
+      "status": "In Progress",
+      "priority": "High",
+      "department": "PWD (Roads & Infrastructure)",
+      "officer": "Ravi Kumar (JE - PWD Kadri)",
+      "slaHours": "7 days",
+      "expectedResolutionDate": "2026-10-16T07:14:00.380Z",
+      "photos": [],
+      "videos": [],
+      "resolutionPhoto": null,
+      "resolutionRemarks": null,
+      "rejectionReason": null,
+      "reporterId": "usr_citizen_ananya",
+      "reporterName": "Ananya Rao",
+      "reporterPhone": "9876543210",
+      "reporterEmail": "citizen@example.com",
+      "isPublic": true,
+      "createdAt": "2026-10-10T07:14:00.380Z",
+      "updatedAt": "2026-10-13T07:14:00.380Z",
+      "resolvedAt": null,
+      "statusHistory": [
+        {
+          "id": "sh_cp1_1",
+          "status": "Submitted",
+          "changedBy": "Ananya Rao",
+          "role": "Citizen",
+          "timestamp": "2026-10-10T07:14:00.380Z",
+          "remarks": "Citizen reported hazardous pothole on busy pedestrian stretch.",
+          "evidencePhoto": null
+        },
+        {
+          "id": "sh_cp1_2",
+          "status": "Verified",
+          "changedBy": "Control Room Officer",
+          "role": "Municipal Authority",
+          "timestamp": "2026-10-11T07:14:00.380Z",
+          "remarks": "Location confirmed; marked as high priority due to school proximity.",
+          "evidencePhoto": null
+        },
+        {
+          "id": "sh_cp1_3",
+          "status": "Assigned",
+          "changedBy": "Ward Engineer",
+          "role": "Municipal Authority",
+          "timestamp": "2026-10-12T07:14:00.380Z",
+          "remarks": "Assigned to Ravi Kumar (JE - PWD) for asphalt patching.",
+          "evidencePhoto": null
+        },
+        {
+          "id": "sh_cp1_4",
+          "status": "In Progress",
+          "changedBy": "Ravi Kumar (JE - PWD Kadri)",
+          "role": "Municipal Authority",
+          "timestamp": "2026-10-13T07:14:00.380Z",
+          "remarks": "Road crew scheduled; bitumen mix dispatched from mixing plant.",
+          "evidencePhoto": null
+        }
+      ],
+      "notes": [
+        {
+          "text": "Site inspection completed by junior engineer.",
+          "author": "Ravi Kumar",
+          "role": "PWD",
+          "at": "2026-10-12T07:14:00.380Z"
+        },
+        {
+          "text": "Patching work started today morning.",
+          "author": "Ravi Kumar",
+          "role": "PWD",
+          "at": "2026-10-13T07:14:00.380Z"
+        }
+      ],
+      "voters": [],
+      "anonymous": false
+    },
+    {
+      "id": "CP-2026-00002",
+      "title": "Overflowing garbage bin behind Hampankatta Market",
+      "description": "Solid waste container has not been cleared for 3 days. Stray cattle and dogs are scattering waste across the road causing severe odor.",
+      "category": "Garbage and waste management",
+      "area": "Hampankatta",
+      "landmark": "Behind Central Fish & Vegetable Market",
+      "lat": 12.8698,
+      "lng": 74.8426,
+      "coords": [
+        12.8698,
+        74.8426
+      ],
+      "status": "Resolved",
+      "priority": "Critical",
+      "department": "Health & Sanitation Section",
+      "officer": "Suresh Nayak (Sanitary Inspector)",
+      "slaHours": "24 hours",
+      "expectedResolutionDate": "2026-10-09T07:14:00.380Z",
+      "photos": [],
+      "videos": [],
+      "resolutionPhoto": null,
+      "resolutionRemarks": "Garbage compactor vehicle completed waste evacuation and spot sanitized with bleaching powder.",
+      "rejectionReason": null,
+      "reporterId": "usr_citizen_ananya",
+      "reporterName": "Ananya Rao",
+      "reporterPhone": "9876543210",
+      "reporterEmail": "citizen@example.com",
+      "isPublic": true,
+      "createdAt": "2026-10-08T07:14:00.380Z",
+      "updatedAt": "2026-10-09T07:14:00.380Z",
+      "resolvedAt": "2026-10-09T07:14:00.380Z",
+      "statusHistory": [
+        {
+          "id": "sh_cp2_1",
+          "status": "Submitted",
+          "changedBy": "Ananya Rao",
+          "role": "Citizen",
+          "timestamp": "2026-10-08T07:14:00.380Z",
+          "remarks": "Reported overflowing garbage creating health hazard.",
+          "evidencePhoto": null
+        },
+        {
+          "id": "sh_cp2_2",
+          "status": "Verified",
+          "changedBy": "Health Section Desk",
+          "role": "Municipal Authority",
+          "timestamp": "2026-10-08T12:02:00.380Z",
+          "remarks": "Escalated as critical health priority.",
+          "evidencePhoto": null
+        },
+        {
+          "id": "sh_cp2_3",
+          "status": "In Progress",
+          "changedBy": "Suresh Nayak",
+          "role": "Municipal Authority",
+          "timestamp": "2026-10-08T19:14:00.380Z",
+          "remarks": "Garbage truck team deployed on-site.",
+          "evidencePhoto": null
+        },
+        {
+          "id": "sh_cp2_4",
+          "status": "Resolved",
+          "changedBy": "Suresh Nayak",
+          "role": "Municipal Authority",
+          "timestamp": "2026-10-09T07:14:00.380Z",
+          "remarks": "Container emptied, area swept and disinfected with lime powder.",
+          "evidencePhoto": null
+        }
+      ],
+      "notes": [
+        {
+          "text": "Compactor vehicle #KA-19-G-4412 cleared the spot.",
+          "author": "Suresh Nayak",
+          "role": "Health Section",
+          "at": "2026-10-09T07:14:00.380Z"
+        }
+      ],
+      "voters": [],
+      "anonymous": false
+    },
+    {
+      "id": "CP-2026-00003",
+      "title": "Main pipeline drinking water leakage flooding street",
+      "description": "Clean drinking water gushing from underground pipeline joint since 6 AM. Gallons of water wasted and low pressure in nearby homes.",
+      "category": "Water leakage",
+      "area": "Bejai",
+      "landmark": "Near Bejai Church junction",
+      "lat": 12.8872,
+      "lng": 74.8435,
+      "coords": [
+        12.8872,
+        74.8435
+      ],
+      "status": "Assigned",
+      "priority": "Critical",
+      "department": "Mangaluru City Water Supply Board",
+      "officer": "Rajesh Bhat (Assistant Executive Engineer)",
+      "slaHours": "48 hours",
+      "expectedResolutionDate": "2026-10-15T07:14:00.380Z",
+      "photos": [],
+      "videos": [],
+      "resolutionPhoto": null,
+      "resolutionRemarks": null,
+      "rejectionReason": null,
+      "reporterId": "usr_citizen_ananya",
+      "reporterName": "Ananya Rao",
+      "reporterPhone": "9876543210",
+      "reporterEmail": "citizen@example.com",
+      "isPublic": true,
+      "createdAt": "2026-10-13T07:14:00.380Z",
+      "updatedAt": "2026-10-13T13:14:00.380Z",
+      "resolvedAt": null,
+      "statusHistory": [
+        {
+          "id": "sh_cp3_1",
+          "status": "Submitted",
+          "changedBy": "Ananya Rao",
+          "role": "Citizen",
+          "timestamp": "2026-10-13T07:14:00.380Z",
+          "remarks": "Severe pipeline burst reported.",
+          "evidencePhoto": null
+        },
+        {
+          "id": "sh_cp3_2",
+          "status": "Verified",
+          "changedBy": "Emergency Helpline",
+          "role": "Municipal Authority",
+          "timestamp": "2026-10-13T09:14:00.380Z",
+          "remarks": "Main valve temporarily regulated to prevent further flooding.",
+          "evidencePhoto": null
+        },
+        {
+          "id": "sh_cp3_3",
+          "status": "Assigned",
+          "changedBy": "Water Board Superintending Eng",
+          "role": "Municipal Authority",
+          "timestamp": "2026-10-13T13:14:00.380Z",
+          "remarks": "Assigned to Rajesh Bhat. Valve technician team dispatched with clamp repair kit.",
+          "evidencePhoto": null
+        }
+      ],
+      "notes": [],
+      "voters": [],
+      "anonymous": false
+    },
+    {
+      "id": "CP-2026-00004",
+      "title": "Blocked stormwater storm drain causing waterlogging",
+      "description": "Silt and plastic waste blocking main drain grating. Water backflows onto pedestrian walkway during heavy downpours.",
+      "category": "Drainage and sewage",
+      "area": "Kottara",
+      "landmark": "Kottara Chowki service road",
+      "lat": 12.916,
+      "lng": 74.832,
+      "coords": [
+        12.916,
+        74.832
+      ],
+      "status": "Verified",
+      "priority": "High",
+      "department": "Engineering Section (Drainage & Sewage)",
+      "officer": null,
+      "slaHours": "72 hours",
+      "expectedResolutionDate": "2026-10-17T07:14:00.380Z",
+      "photos": [],
+      "videos": [],
+      "resolutionPhoto": null,
+      "resolutionRemarks": null,
+      "rejectionReason": null,
+      "reporterId": "usr_citizen_ananya",
+      "reporterName": "Ananya Rao",
+      "reporterPhone": "9876543210",
+      "reporterEmail": "citizen@example.com",
+      "isPublic": true,
+      "createdAt": "2026-10-13T19:14:00.380Z",
+      "updatedAt": "2026-10-14T07:14:56.435Z",
+      "resolvedAt": null,
+      "statusHistory": [
+        {
+          "id": "sh_cp4_1",
+          "status": "Submitted",
+          "changedBy": "Ananya Rao",
+          "role": "Citizen",
+          "timestamp": "2026-10-13T19:14:00.380Z",
+          "remarks": "Initial complaint submitted awaiting verification.",
+          "evidencePhoto": null
+        },
+        {
+          "id": "sh_1791962096435_ypkx",
+          "status": "Verified",
+          "changedBy": "Commissioner M. Hegde",
+          "role": "Municipal Authority",
+          "timestamp": "2026-10-14T07:14:56.435Z",
+          "remarks": "Pothole reported on service road inspected and verified.",
+          "evidencePhoto": null
+        }
+      ],
+      "notes": [],
+      "voters": [],
+      "anonymous": false
+    },
+    {
+      "id": "CP-2026-00005",
+      "title": "Four streetlights not functioning for over a week",
+      "description": "Entire stretch of road near beach park is in complete darkness at night. Unsafe for women and evening commuters.",
+      "category": "Streetlight failure",
+      "area": "Panambur",
+      "landmark": "Panambur Beach entrance approach road",
+      "lat": 12.945,
+      "lng": 74.802,
+      "coords": [
+        12.945,
+        74.802
+      ],
+      "status": "In Progress",
+      "priority": "Medium",
+      "department": "MESCOM (Electrical Division)",
+      "officer": "Ganesh Poojary (Section Officer Kadri)",
+      "slaHours": "48 hours",
+      "expectedResolutionDate": "2026-10-15T07:14:00.380Z",
+      "photos": [],
+      "videos": [],
+      "resolutionPhoto": null,
+      "resolutionRemarks": null,
+      "rejectionReason": null,
+      "reporterId": "usr_citizen_ananya",
+      "reporterName": "Ananya Rao",
+      "reporterPhone": "9876543210",
+      "reporterEmail": "citizen@example.com",
+      "isPublic": true,
+      "createdAt": "2026-10-12T07:14:00.380Z",
+      "updatedAt": "2026-10-13T17:14:00.380Z",
+      "resolvedAt": null,
+      "statusHistory": [
+        {
+          "id": "sh_cp5_1",
+          "status": "Submitted",
+          "changedBy": "Ananya Rao",
+          "role": "Citizen",
+          "timestamp": "2026-10-12T07:14:00.380Z",
+          "remarks": "Reported continuous dark streetlights.",
+          "evidencePhoto": null
+        },
+        {
+          "id": "sh_cp5_2",
+          "status": "Verified",
+          "changedBy": "Electrical Control Room",
+          "role": "Municipal Authority",
+          "timestamp": "2026-10-13T01:14:00.380Z",
+          "remarks": "Feeder pillar circuit fault diagnosed.",
+          "evidencePhoto": null
+        },
+        {
+          "id": "sh_cp5_3",
+          "status": "In Progress",
+          "changedBy": "Ganesh Poojary",
+          "role": "Municipal Authority",
+          "timestamp": "2026-10-13T17:14:00.380Z",
+          "remarks": "Hydraulic ladder truck deployed to replace LED ballast.",
+          "evidencePhoto": null
+        }
+      ],
+      "notes": [
+        {
+          "text": "Replacement LED luminaires being fitted today.",
+          "author": "Ganesh Poojary",
+          "role": "MESCOM",
+          "at": "2026-10-13T17:14:00.380Z"
+        }
+      ],
+      "voters": [],
+      "anonymous": false
+    }
+  ],
+  "users": [
+    {
+      "id": "usr_admin_01",
+      "name": "Commissioner M. Hegde",
+      "email": "admin@Dhwani.org",
+      "phone": "+91 824 2220300",
+      "passwordHash": "5e2c6e4060b428325f5769b5a80dd0b2:80f180946369132494f52753cf8be23afeca87de688574588b65f55f0c00f20c82cb3652ab431b106f3104c7188164f2c071e1166609c930248a9f654d42e058",
+      "role": "admin",
+      "department": "Municipal Administration",
+      "title": "Municipal Commissioner",
+      "createdAt": "2026-01-01T00:00:00.000Z"
+    },
+    {
+      "id": "usr_officer_pwd",
+      "name": "Ravi Kumar (JE)",
+      "email": "officer.pwd@Dhwani.org",
+      "phone": "+91 98450 11223",
+      "passwordHash": "2e64bf774ecae780eb52dbc26aacde60:af195853c51525a1ff80168a94f57e811f1f3971d2654d4efb835f3268cc06a20995f81682125d9ba41cc58339ea062bb926ddf60a324b81eb933cd6e0ca51d0",
+      "role": "admin",
+      "department": "PWD (Roads & Infrastructure)",
+      "title": "Junior Engineer — Kadri Section",
+      "createdAt": "2026-01-05T00:00:00.000Z"
+    },
+    {
+      "id": "usr_citizen_ananya",
+      "name": "Anup",
+      "email": "citizen@example.com",
+      "phone": "9876543210",
+      "passwordHash": "a4fe8dd367abf8ee79c0caef0df1ddbd:ded07ad668b26b18a6273bb48651aefb9d92d4c3ea627905a8b5b0952e1106d238a7fc0bd1513ea51e6ce49e91c05d605d939da981b5988c617e41d1ca957d34",
+      "role": "citizen",
+      "department": null,
+      "title": "Resident, Kadri",
+      "createdAt": "2026-02-10T00:00:00.000Z"
+    },
+    {
+      "id": "usr_1793173117128_80db",
+      "name": "anup",
+      "email": "anupsalian777@gmail.com",
+      "phone": "7349304361",
+      "passwordHash": "2d9aaec38147652bad19b46163f4c018:30a498fff7a0e95bd138f276bef4edf4f7293bf4d3b313c99be6ddf6cd79e0e06b05f699b3f1feaea497f19fba8eea4f6a19b4bebc5c4953febe5e29e7bac4b7",
+      "role": "citizen",
+      "department": null,
+      "title": "Resident",
+      "createdAt": "2026-10-28T07:38:37.144Z"
+    }
+  ],
+  "notifications": [
+    {
+      "id": "notif_1795577735849_jlmg",
+      "userId": "all_admins",
+      "complaintId": "CP-2026-00012",
+      "title": "New Civic Report Filed",
+      "message": "[CP-2026-00012] New Medium priority report in Kadri: \"gfdxfghj\".",
+      "type": "assignment",
+      "read": false,
+      "createdAt": "2026-11-25T03:35:35.849Z"
+    },
+    {
+      "id": "notif_1795573324801_xz4g",
+      "userId": "all_admins",
+      "complaintId": "CP-2026-00011",
+      "title": "New Civic Report Filed",
+      "message": "[CP-2026-00011] New Medium priority report in Kadri: \"pothole\".",
+      "type": "assignment",
+      "read": false,
+      "createdAt": "2026-11-25T02:22:04.801Z"
+    },
+    {
+      "id": "notif_1795533422983_vaq9",
+      "userId": "all_admins",
+      "complaintId": "CP-2026-00010",
+      "title": "New Civic Report Filed",
+      "message": "[CP-2026-00010] New Medium priority report in Kadri: \"tereafw\".",
+      "type": "assignment",
+      "read": true,
+      "createdAt": "2026-11-24T15:17:02.983Z"
+    },
+    {
+      "id": "notif_1794987755639_r5dc",
+      "userId": "all_admins",
+      "complaintId": "CP-2026-00009",
+      "title": "New Civic Report Filed",
+      "message": "[CP-2026-00009] New Low priority report in Kadri: \"awyersui\".",
+      "type": "assignment",
+      "read": false,
+      "createdAt": "2026-11-18T07:42:35.639Z"
+    },
+    {
+      "id": "notif_1793173117159_sruw",
+      "userId": "usr_1793173117128_80db",
+      "complaintId": null,
+      "title": "Welcome to Dhwani Mangaluru",
+      "message": "Hello anup, your account is active. You can now report issues, track their progress in real-time, and view your complaint history.",
+      "type": "general",
+      "read": false,
+      "createdAt": "2026-10-28T07:38:37.160Z"
+    },
+    {
+      "id": "notif_1793168250715_su30",
+      "userId": "all_admins",
+      "complaintId": "CP-2026-00008",
+      "title": "New Civic Report Filed",
+      "message": "[CP-2026-00008] New Medium priority report in Other Mangaluru: \"gdjgfj\".",
+      "type": "assignment",
+      "read": true,
+      "createdAt": "2026-10-28T06:17:30.715Z"
+    },
+    {
+      "id": "notif_1791963488082_xuww",
+      "userId": "usr_citizen_ananya",
+      "complaintId": "CP-2026-00007",
+      "title": "Complaint Status: In Progress",
+      "message": "Your complaint [CP-2026-00007] is now marked as \"In Progress\". Remark: Excavation team dispatched with replacement pipe section.",
+      "type": "status_update",
+      "read": false,
+      "createdAt": "2026-10-14T07:38:08.082Z"
+    },
+    {
+      "id": "notif_1791963488038_c0b9",
+      "userId": "all_admins",
+      "complaintId": "CP-2026-00007",
+      "title": "New Civic Report Filed",
+      "message": "[CP-2026-00007] New Critical priority report in Kankanady: \"Severe water pipe rupture near Kankanady bypass\".",
+      "type": "assignment",
+      "read": true,
+      "createdAt": "2026-10-14T07:38:08.038Z"
+    },
+    {
+      "id": "notif_1791963488036_dj8v",
+      "userId": "usr_citizen_ananya",
+      "complaintId": "CP-2026-00007",
+      "title": "Complaint Registered",
+      "message": "Your complaint CP-2026-00007 regarding \"Severe water pipe rupture near Kankanady bypass\" has been submitted to Mangaluru City Water Supply Board.",
+      "type": "status_update",
+      "read": false,
+      "createdAt": "2026-10-14T07:38:08.036Z"
+    },
+    {
+      "id": "notif_1791962647253_3h96",
+      "userId": "usr_citizen_ananya",
+      "complaintId": "CP-2026-00006",
+      "title": "Complaint Status: Resolved",
+      "message": "Your complaint [CP-2026-00006] is now marked as \"Resolved\". ",
+      "type": "resolution",
+      "read": false,
+      "createdAt": "2026-10-14T07:24:07.253Z"
+    },
+    {
+      "id": "notif_1791962647232_ml3w",
+      "userId": "usr_citizen_ananya",
+      "complaintId": "CP-2026-00006",
+      "title": "Complaint Status: In Progress",
+      "message": "Your complaint [CP-2026-00006] is now marked as \"In Progress\". Remark: Excavation team dispatched with replacement pipe section.",
+      "type": "status_update",
+      "read": false,
+      "createdAt": "2026-10-14T07:24:07.233Z"
+    },
+    {
+      "id": "notif_1791962647192_misc",
+      "userId": "all_admins",
+      "complaintId": "CP-2026-00006",
+      "title": "New Civic Report Filed",
+      "message": "[CP-2026-00006] New Critical priority report in Kankanady: \"Severe water pipe rupture near Kankanady bypass\".",
+      "type": "assignment",
+      "read": true,
+      "createdAt": "2026-10-14T07:24:07.192Z"
+    },
+    {
+      "id": "notif_1791962647192_6bte",
+      "userId": "usr_citizen_ananya",
+      "complaintId": "CP-2026-00006",
+      "title": "Complaint Registered",
+      "message": "Your complaint CP-2026-00006 regarding \"Severe water pipe rupture near Kankanady bypass\" has been submitted to Mangaluru City Water Supply Board.",
+      "type": "status_update",
+      "read": false,
+      "createdAt": "2026-10-14T07:24:07.192Z"
+    },
+    {
+      "id": "notif_1791962096436_3fm2",
+      "userId": "usr_citizen_ananya",
+      "complaintId": "CP-2026-00004",
+      "title": "Complaint Status: Verified",
+      "message": "Your complaint [CP-2026-00004] is now marked as \"Verified\". Remark: Pothole reported on service road inspected and verified.",
+      "type": "status_update",
+      "read": false,
+      "createdAt": "2026-10-14T07:14:56.436Z"
+    }
+  ],
+  "sessions": [
+    {
+      "token": "cpsess_4e508163acfbb8f25cad9762f1d5bf7c3be36f58f4579364",
+      "userId": "usr_citizen_ananya",
+      "createdAt": 1791962079940
+    },
+    {
+      "token": "cpsess_dc6a661b562c037da878e93d0454b0ded59c29b970b7dc33",
+      "userId": "usr_admin_01",
+      "createdAt": 1791962096366
+    },
+    {
+      "token": "cpsess_abfc767210aacecda3adf7134d5a1c419b74276a48e31979",
+      "userId": "usr_citizen_ananya",
+      "createdAt": 1791962118183
+    },
+    {
+      "token": "cpsess_31b39e0c26314df6d0b3509b05b225d05fd1d6e09569a5ab",
+      "userId": "usr_citizen_ananya",
+      "createdAt": 1791962647170
+    },
+    {
+      "token": "cpsess_8957c6b8a437057f1521a0e2cfdb2d31fc2f0bd9f5628e7a",
+      "userId": "usr_admin_01",
+      "createdAt": 1791962647223
+    },
+    {
+      "token": "cpsess_336fa3c535f54d88006baa65472039b3fe7ea3fabf5e2cf7",
+      "userId": "usr_citizen_ananya",
+      "createdAt": 1791963488012
+    },
+    {
+      "token": "cpsess_6731274b34f4bae3d61c786d2240d3e25f47c264d076ec55",
+      "userId": "usr_admin_01",
+      "createdAt": 1791963488072
+    },
+    {
+      "token": "cpsess_c65d2436365bea5ce381788f1c6422e497b0dc71b91c695d",
+      "userId": "usr_citizen_ananya",
+      "createdAt": 1793168313149
+    },
+    {
+      "token": "cpsess_e4fe127834d114adebc4130452b754b4ae1874962e539200",
+      "userId": "usr_1793173117128_80db",
+      "createdAt": 1793173117149
+    },
+    {
+      "token": "cpsess_2b7bc5c470a6a7fab6c943ba91d21ddf30e54a86a38a3b4d",
+      "userId": "usr_admin_01",
+      "createdAt": 1793173181630
+    },
+    {
+      "token": "cpsess_d37385538823283a00a49de9a7900920528371d53fd8f804",
+      "userId": "usr_admin_01",
+      "createdAt": 1795573336018
+    },
+    {
+      "token": "cpsess_8d0434149001f759e6937cb1ed9b36cb0e6f69125b07d113",
+      "userId": "usr_citizen_ananya",
+      "createdAt": 1795578893376
+    }
+  ],
+  "meta": {
+    "idCounters": {
+      "2026": 12
+    }
+  }
+}
